@@ -61,6 +61,7 @@ class User(UserMixin, db.Model):
     contacts = db.relationship("Contact", back_populates="owner", lazy="dynamic")
     companies = db.relationship("Company", back_populates="owner", lazy="dynamic")
     deals = db.relationship("Deal", back_populates="owner", lazy="dynamic")
+    customers = db.relationship("Customer", back_populates="owner", lazy="dynamic")
     created_leads = db.relationship(
         "Lead",
         back_populates="created_by",
@@ -244,13 +245,62 @@ class Lead(db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
+    customer = db.relationship(
+        "Customer",
+        back_populates="source_lead",
+        uselist=False,
+    )
+
+    @property
+    def is_converted(self) -> bool:
+        return self.customer is not None
 
     def __repr__(self) -> str:
         return f"<Lead {self.name}>"
 
 
+class Customer(db.Model):
+    """Customer record — created directly or converted from a Lead."""
+
+    __tablename__ = "customers"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False, index=True)
+    email = db.Column(db.String(120), index=True)
+    phone = db.Column(db.String(40))
+    address = db.Column(db.String(255))
+    gst = db.Column(db.String(40), index=True)
+    website = db.Column(db.String(200))
+    industry = db.Column(db.String(100))
+    primary_contact = db.Column(db.String(150))
+    notes = db.Column(db.Text)
+    status = db.Column(db.String(40), default="Active", nullable=False, index=True)
+    country = db.Column(db.String(100))
+    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id"), unique=True)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    owner = db.relationship("User", back_populates="customers")
+    source_lead = db.relationship(
+        "Lead",
+        back_populates="customer",
+        foreign_keys=[lead_id],
+    )
+
+    def __repr__(self) -> str:
+        return f"<Customer {self.name}>"
+
+
 class ActivityLog(db.Model):
-    """Audit trail for lead (and related) actions."""
+    """Audit trail for lead/customer (and related) actions."""
 
     __tablename__ = "activity_logs"
 
@@ -261,12 +311,14 @@ class ActivityLog(db.Model):
     message = db.Column(db.String(500), nullable=False)
     details = db.Column(db.Text)
     lead_id = db.Column(db.Integer, db.ForeignKey("leads.id", ondelete="CASCADE"))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id", ondelete="CASCADE"))
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True
     )
 
     lead = db.relationship("Lead", back_populates="activities")
+    customer = db.relationship("Customer", backref=db.backref("activities", lazy="dynamic"))
     user = db.relationship("User", back_populates="activities")
 
     def __repr__(self) -> str:

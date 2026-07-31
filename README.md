@@ -26,6 +26,11 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Search, filter, pagination
   - Form validation + activity log on every action
   - Responsive Bootstrap table
+  - Convert Lead → Customer
+- **Customer Management**
+  - Address, GST, Website, Industry, Primary Contact, Notes
+  - Customer list / details with CRUD
+  - Search, pagination, responsive UI
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -64,6 +69,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── auth.py        # Auth blueprint
     │   ├── dashboard.py
     │   ├── leads.py       # Lead Management
+    │   ├── customers.py   # Customer Management
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
@@ -165,6 +171,7 @@ Override the default admin via `.env` (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_P
 |------------|---------------|--------------------------------------------------|
 | Dashboard  | `/`           | Stats, charts, recent activities                 |
 | Leads      | `/leads`      | Lead management with search, filters, activity   |
+| Customers  | `/customers`  | Customers + convert from leads                   |
 | Contacts   | `/contacts`   | People linked to companies                       |
 | Companies  | `/companies`  | Organizations you work with                       |
 | Deals      | `/deals`      | Sales opportunities with stages & values         |

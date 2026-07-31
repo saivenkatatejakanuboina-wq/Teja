@@ -135,6 +135,51 @@ class DealForm(FlaskForm):
     submit = SubmitField("Save Deal")
 
 
+CUSTOMER_STATUSES = [
+    ("Active", "Active"),
+    ("Inactive", "Inactive"),
+]
+
+
+class CustomerForm(FlaskForm):
+    name = StringField(
+        "Customer Name",
+        validators=[
+            DataRequired(message="Customer name is required."),
+            Length(max=150),
+        ],
+    )
+    primary_contact = StringField(
+        "Primary Contact",
+        validators=[Optional(), Length(max=150)],
+    )
+    email = StringField(
+        "Email",
+        validators=[
+            Optional(),
+            Email(message="Enter a valid email address."),
+            Length(max=120),
+        ],
+    )
+    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    address = StringField("Address", validators=[Optional(), Length(max=255)])
+    gst = StringField(
+        "GST",
+        validators=[Optional(), Length(max=40)],
+    )
+    website = StringField("Website", validators=[Optional(), Length(max=200)])
+    industry = StringField("Industry", validators=[Optional(), Length(max=100)])
+    country = StringField("Country", validators=[Optional(), Length(max=100)])
+    status = SelectField(
+        "Status",
+        choices=CUSTOMER_STATUSES,
+        validators=[DataRequired()],
+        default="Active",
+    )
+    notes = TextAreaField("Notes", validators=[Optional(), Length(max=5000)])
+    submit = SubmitField("Save Customer")
+
+
 class LeadForm(FlaskForm):
     name = StringField(
         "Lead Name",

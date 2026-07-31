@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
 
 {% block topbar_actions %}
+{% if lead.is_converted %}
+<a href="{{ url_for('customers.detail', customer_id=lead.customer.id) }}" class="btn btn-success btn-sm">
+  <i class="bi bi-person-badge"></i> View Customer
+</a>
+{% else %}
+<a href="{{ url_for('customers.convert_from_lead', lead_id=lead.id) }}" class="btn btn-success btn-sm">
+  <i class="bi bi-arrow-left-right"></i> Convert to Customer
+</a>
+{% endif %}
 <a href="{{ url_for('leads.edit', lead_id=lead.id) }}" class="btn btn-primary btn-sm">
   <i class="bi bi-pencil"></i> Edit
 </a>

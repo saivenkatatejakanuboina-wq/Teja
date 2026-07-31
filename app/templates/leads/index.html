@@ -76,6 +76,11 @@
             {% endif %}
           </td>
           <td class="text-end table-actions">
+            {% if not lead.is_converted %}
+            <a href="{{ url_for('customers.convert_from_lead', lead_id=lead.id) }}" class="btn btn-sm btn-outline-success" title="Convert to Customer">
+              <i class="bi bi-arrow-left-right"></i>
+            </a>
+            {% endif %}
             <a href="{{ url_for('leads.edit', lead_id=lead.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
               <i class="bi bi-pencil"></i>
             </a>

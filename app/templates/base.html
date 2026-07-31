@@ -30,6 +30,9 @@
         <a href="{{ url_for('leads.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('leads.') %}active{% endif %}">
           <i class="bi bi-funnel"></i> <span>Leads</span>
         </a>
+        <a href="{{ url_for('customers.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('customers.') %}active{% endif %}">
+          <i class="bi bi-person-badge"></i> <span>Customers</span>
+        </a>
         <a href="{{ url_for('contacts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
           <i class="bi bi-people"></i> <span>Contacts</span>
         </a>
