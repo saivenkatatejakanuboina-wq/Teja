@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="panel form-panel">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-md-6">
+        {{ form.name.label(class='form-label') }}
+        {{ form.name(class='form-control' + (' is-invalid' if form.name.errors else ''), placeholder='e.g. Sarah Chen') }}
+        {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.company.label(class='form-label') }}
+        {{ form.company(class='form-control', placeholder='Company name') }}
+        {% for error in form.company.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.email.label(class='form-label') }}
+        {{ form.email(class='form-control' + (' is-invalid' if form.email.errors else ''), placeholder='name@company.com') }}
+        {% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.phone.label(class='form-label') }}
+        {{ form.phone(class='form-control', placeholder='+1 555 0100') }}
+        {% for error in form.phone.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.whatsapp_number.label(class='form-label') }}
+        {{ form.whatsapp_number(class='form-control', placeholder='+15550100') }}
+        <div class="form-text">Used for WhatsApp chat. Falls back to phone if empty.</div>
+        {% for error in form.whatsapp_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.country.label(class='form-label') }}
+        {{ form.country(class='form-control', placeholder='Country') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.industry.label(class='form-label') }}
+        {{ form.industry(class='form-control', placeholder='e.g. Technology') }}
+      </div>
+      <div class="col-md-4">
+        {{ form.lead_source.label(class='form-label') }}
+        {{ form.lead_source(class='form-select' + (' is-invalid' if form.lead_source.errors else '')) }}
+        {% for error in form.lead_source.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-4">
+        {{ form.status.label(class='form-label') }}
+        {{ form.status(class='form-select' + (' is-invalid' if form.status.errors else '')) }}
+        {% for error in form.status.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-4">
+        {{ form.assigned_to_id.label(class='form-label') }}
+        {{ form.assigned_to_id(class='form-select') }}
+      </div>
+      <div class="col-12">
+        {{ form.notes.label(class='form-label') }}
+        {{ form.notes(class='form-control', rows=4, placeholder='Context, next steps, call notes...') }}
+      </div>
+    </div>
+    <div class="form-actions">
+      <a href="{{ url_for('leads.detail', lead_id=lead.id) if lead is defined else url_for('leads.index') }}" class="btn btn-outline-secondary">Cancel</a>
+      {{ form.submit(class='btn btn-primary') }}
+    </div>
+  </form>
+</div>
+{% endblock %}

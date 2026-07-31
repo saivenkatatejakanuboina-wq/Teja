@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Upload too large{% endblock %}
+{% block content %}
+<div class="panel text-center py-5">
+  <h1 class="display-6">413</h1>
+  <p class="text-muted">The uploaded file is too large. Maximum size is 8 MB.</p>
+  <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">Back to dashboard</a>
+</div>
+{% endblock %}

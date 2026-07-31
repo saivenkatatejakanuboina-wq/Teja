@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="panel form-panel">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-12">
+        {{ form.title.label(class='form-label') }}
+        {{ form.title(class='form-control' + (' is-invalid' if form.title.errors else ''), placeholder='What needs to be done?') }}
+        {% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-12">
+        {{ form.description.label(class='form-label') }}
+        {{ form.description(class='form-control', rows=4, placeholder='Details, acceptance criteria, notes...') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.assigned_to_id.label(class='form-label') }}
+        {{ form.assigned_to_id(class='form-select' + (' is-invalid' if form.assigned_to_id.errors else '')) }}
+        {% for error in form.assigned_to_id.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-3">
+        {{ form.priority.label(class='form-label') }}
+        {{ form.priority(class='form-select') }}
+      </div>
+      <div class="col-md-3">
+        {{ form.status.label(class='form-label') }}
+        {{ form.status(class='form-select') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.due_date.label(class='form-label') }}
+        {{ form.due_date(class='form-control', type='date') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.completed_date.label(class='form-label') }}
+        {{ form.completed_date(class='form-control', type='date') }}
+        <div class="form-text">Auto-filled when status is set to Completed.</div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a href="{{ url_for('tasks.detail', task_id=task.id) if task is defined else url_for('tasks.index') }}" class="btn btn-outline-secondary">Cancel</a>
+      {{ form.submit(class='btn btn-primary') }}
+    </div>
+  </form>
+</div>
+{% endblock %}
