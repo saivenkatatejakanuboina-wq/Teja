@@ -58,6 +58,11 @@
         <a href="{{ url_for('settings.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('settings.') %}active{% endif %}">
           <i class="bi bi-gear"></i> <span>Settings</span>
         </a>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">
+          <i class="bi bi-shield-lock"></i> <span>Admin Panel</span>
+        </a>
+        {% endif %}
       </nav>
 
       <div class="sidebar-section-label">Shortcuts</div>
@@ -128,9 +133,16 @@
                   <i class="bi bi-gear me-2"></i> Settings
                 </a>
               </li>
+              {% if current_user.is_admin %}
+              <li>
+                <a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">
+                  <i class="bi bi-shield-lock me-2"></i> Admin Panel
+                </a>
+              </li>
+              {% endif %}
               <li>
                 <a class="dropdown-item" href="{{ url_for('settings.index', tab='password') }}">
-                  <i class="bi bi-shield-lock me-2"></i> Change Password
+                  <i class="bi bi-key me-2"></i> Change Password
                 </a>
               </li>
               <li><hr class="dropdown-divider"></li>

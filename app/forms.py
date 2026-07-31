@@ -9,11 +9,13 @@ from wtforms import (
     IntegerField,
     PasswordField,
     SelectField,
+    SelectMultipleField,
     StringField,
     SubmitField,
     TextAreaField,
     TimeField,
 )
+from wtforms.widgets import CheckboxInput, ListWidget
 from wtforms.validators import (
     DataRequired,
     Email,
@@ -31,12 +33,21 @@ from app.models import (
     FOLLOWUP_TYPES,
     LEAD_SOURCES,
     LEAD_STATUSES,
+    PERMISSIONS,
     TASK_PRIORITIES,
     TASK_STATUSES,
     THEME_OPTIONS,
     TIMEZONE_OPTIONS,
+    USER_ROLES,
     User,
 )
+
+
+class MultiCheckboxField(SelectMultipleField):
+    """Render a SelectMultipleField as a list of checkboxes."""
+
+    widget = ListWidget(prefix_label=False)
+    option_widget = CheckboxInput()
 
 CONTACT_STATUSES = [
     ("Lead", "Lead"),
@@ -434,3 +445,80 @@ class RestoreDatabaseForm(FlaskForm):
         ],
     )
     submit = SubmitField("Restore Database")
+
+
+class AdminUserForm(FlaskForm):
+    username = StringField(
+        "Username",
+        validators=[
+            DataRequired(message="Username is required."),
+            Length(min=3, max=80),
+        ],
+    )
+    email = StringField(
+        "Email",
+        validators=[
+            DataRequired(message="Email is required."),
+            Email(message="Enter a valid email address."),
+            Length(max=120),
+        ],
+    )
+    full_name = StringField(
+        "Full Name",
+        validators=[DataRequired(message="Full name is required."), Length(max=120)],
+    )
+    role = SelectField(
+        "Role",
+        choices=[(r, r.title()) for r in USER_ROLES],
+        validators=[DataRequired()],
+    )
+    is_active = BooleanField("Active", default=True)
+    password = PasswordField(
+        "Password",
+        validators=[Optional(), Length(min=6, max=128)],
+    )
+    confirm_password = PasswordField(
+        "Confirm Password",
+        validators=[
+            Optional(),
+            EqualTo("password", message="Passwords must match."),
+        ],
+    )
+    permissions = MultiCheckboxField(
+        "Permissions",
+        choices=[(key, label) for key, label in PERMISSIONS],
+        validators=[Optional()],
+    )
+    submit = SubmitField("Save User")
+
+    def __init__(self, original_user=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.original_user = original_user
+
+    def validate_username(self, field):
+        user = User.query.filter_by(username=field.data.strip()).first()
+        if user and (self.original_user is None or user.id != self.original_user.id):
+            raise ValidationError("Username is already taken.")
+
+    def validate_email(self, field):
+        user = User.query.filter_by(email=field.data.strip().lower()).first()
+        if user and (self.original_user is None or user.id != self.original_user.id):
+            raise ValidationError("Email is already registered.")
+
+
+class AdminResetPasswordForm(FlaskForm):
+    new_password = PasswordField(
+        "New Password",
+        validators=[
+            DataRequired(message="New password is required."),
+            Length(min=6, message="Password must be at least 6 characters."),
+        ],
+    )
+    confirm_password = PasswordField(
+        "Confirm Password",
+        validators=[
+            DataRequired(message="Please confirm the password."),
+            EqualTo("new_password", message="Passwords must match."),
+        ],
+    )
+    submit = SubmitField("Reset Password")

@@ -42,7 +42,7 @@ def employee_required(view):
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
             return redirect(url_for("auth.login"))
-        if current_user.role not in ("admin", "employee") or not current_user.is_active:
+        if current_user.role not in ("admin", "manager", "employee") or not current_user.is_active:
             abort(403)
         return view(*args, **kwargs)
 

@@ -48,6 +48,13 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - SMTP settings, theme (light/dark/ocean)
   - Database backup & restore
   - Profile update & password change
+- **Admin Panel** (Admin only)
+  - Bootstrap admin dashboard (user / role KPIs)
+  - Manage users: create, edit, activate / deactivate, delete
+  - Roles: Admin, Manager, Employee
+  - Per-user permissions with role defaults
+  - Reset password
+  - Login history (success / failed attempts)
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -91,13 +98,17 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── tasks.py       # Task Management
     │   ├── reports.py     # Reports + CSV export
     │   ├── settings.py    # Settings module
+    │   ├── admin.py       # Admin Panel
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
     ├── services/
     │   ├── activity.py    # Activity log helper
-    │   └── reports.py     # Report aggregations
+    │   ├── admin_service.py
+    │   ├── reports.py     # Report aggregations
+    │   └── settings_service.py
     ├── templates/         # Views (MVC)
+    │   ├── admin/         # Admin dashboard, users, roles, history
     │   └── auth/
     │       ├── login.html
     │       └── register.html

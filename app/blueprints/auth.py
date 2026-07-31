@@ -1,12 +1,15 @@
 """Authentication blueprint — login, logout, register, session management."""
 
+from datetime import datetime, timezone
+from urllib.parse import urlparse
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
-from urllib.parse import urlparse
 
 from app.extensions import db
 from app.forms import LoginForm, RegisterForm
 from app.models import ROLE_EMPLOYEE, User
+from app.services.admin_service import record_login_attempt
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -31,13 +34,36 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data.strip()).first()
+        username = form.username.data.strip()
+        user = User.query.filter_by(username=username).first()
         if user is None or not user.check_password(form.password.data):
+            record_login_attempt(
+                username=username,
+                status="failed",
+                request=request,
+                user=user,
+            )
+            db.session.commit()
             flash("Invalid username or password.", "danger")
         elif not user.is_active:
+            record_login_attempt(
+                username=username,
+                status="failed",
+                request=request,
+                user=user,
+            )
+            db.session.commit()
             flash("Your account is inactive. Contact an administrator.", "warning")
         else:
             login_user(user, remember=form.remember_me.data)
+            user.last_login_at = datetime.now(timezone.utc)
+            record_login_attempt(
+                username=username,
+                status="success",
+                request=request,
+                user=user,
+            )
+            db.session.commit()
             flash(f"Welcome back, {user.full_name}! ({user.role_label})", "success")
             next_page = _safe_next_url(request.args.get("next"))
             return redirect(next_page or url_for("dashboard.index"))
@@ -60,6 +86,7 @@ def register():
             role=ROLE_EMPLOYEE,
         )
         user.set_password(form.password.data)
+        user.apply_role_defaults()
         db.session.add(user)
         db.session.commit()
         flash("Employee account created successfully. Please sign in.", "success")

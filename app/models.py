@@ -1,5 +1,6 @@
 """SQLAlchemy models for the Mini CRM (MVC Model layer)."""
 
+import json
 from datetime import datetime, timezone
 
 from flask_login import UserMixin
@@ -8,8 +9,38 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from app.extensions import db
 
 ROLE_ADMIN = "admin"
+ROLE_MANAGER = "manager"
 ROLE_EMPLOYEE = "employee"
-USER_ROLES = (ROLE_ADMIN, ROLE_EMPLOYEE)
+USER_ROLES = (ROLE_ADMIN, ROLE_MANAGER, ROLE_EMPLOYEE)
+
+PERMISSIONS = (
+    ("manage_users", "Manage Users"),
+    ("manage_settings", "Manage Settings"),
+    ("manage_leads", "Manage Leads"),
+    ("manage_customers", "Manage Customers"),
+    ("manage_deals", "Manage Deals"),
+    ("manage_followups", "Manage Follow-ups"),
+    ("manage_tasks", "Manage Tasks"),
+    ("view_reports", "View Reports"),
+)
+
+DEFAULT_ROLE_PERMISSIONS = {
+    ROLE_ADMIN: [key for key, _ in PERMISSIONS],
+    ROLE_MANAGER: [
+        "manage_leads",
+        "manage_customers",
+        "manage_deals",
+        "manage_followups",
+        "manage_tasks",
+        "view_reports",
+    ],
+    ROLE_EMPLOYEE: [
+        "manage_leads",
+        "manage_customers",
+        "manage_followups",
+        "manage_tasks",
+    ],
+}
 
 DEAL_STAGES = (
     "Prospecting",
@@ -100,7 +131,7 @@ TIMEZONE_OPTIONS = (
 
 
 class User(UserMixin, db.Model):
-    """Authenticated user with Admin or Employee role."""
+    """Authenticated user with role-based permissions."""
 
     __tablename__ = "users"
 
@@ -110,7 +141,9 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     full_name = db.Column(db.String(120), nullable=False)
     role = db.Column(db.String(20), default=ROLE_EMPLOYEE, nullable=False, index=True)
+    permissions_json = db.Column(db.Text, default="[]")
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    last_login_at = db.Column(db.DateTime)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )
@@ -156,6 +189,12 @@ class User(UserMixin, db.Model):
         lazy="dynamic",
     )
     activities = db.relationship("ActivityLog", back_populates="user", lazy="dynamic")
+    login_history = db.relationship(
+        "LoginHistory",
+        back_populates="user",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
 
     def set_password(self, password: str) -> None:
         """Hash and store the user's password."""
@@ -170,15 +209,69 @@ class User(UserMixin, db.Model):
         return self.role == ROLE_ADMIN
 
     @property
+    def is_manager(self) -> bool:
+        return self.role == ROLE_MANAGER
+
+    @property
     def is_employee(self) -> bool:
         return self.role == ROLE_EMPLOYEE
 
     @property
     def role_label(self) -> str:
-        return "Admin" if self.is_admin else "Employee"
+        return {
+            ROLE_ADMIN: "Admin",
+            ROLE_MANAGER: "Manager",
+            ROLE_EMPLOYEE: "Employee",
+        }.get(self.role, self.role.title())
+
+    def get_permissions(self) -> list[str]:
+        if self.is_admin:
+            return [key for key, _ in PERMISSIONS]
+        raw = self.permissions_json or "[]"
+        try:
+            data = json.loads(raw)
+            if isinstance(data, list) and data:
+                return data
+        except json.JSONDecodeError:
+            pass
+        return list(DEFAULT_ROLE_PERMISSIONS.get(self.role, []))
+
+    def set_permissions(self, permissions: list[str]) -> None:
+        valid = {key for key, _ in PERMISSIONS}
+        cleaned = [p for p in permissions if p in valid]
+        self.permissions_json = json.dumps(cleaned)
+
+    def has_permission(self, permission: str) -> bool:
+        if self.is_admin:
+            return True
+        return permission in self.get_permissions()
+
+    def apply_role_defaults(self) -> None:
+        self.set_permissions(DEFAULT_ROLE_PERMISSIONS.get(self.role, []))
 
     def __repr__(self) -> str:
         return f"<User {self.username} ({self.role})>"
+
+
+class LoginHistory(db.Model):
+    """Record of user login attempts."""
+
+    __tablename__ = "login_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    username_attempted = db.Column(db.String(80), nullable=False, index=True)
+    status = db.Column(db.String(20), nullable=False, default="success", index=True)
+    ip_address = db.Column(db.String(64))
+    user_agent = db.Column(db.String(255))
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True
+    )
+
+    user = db.relationship("User", back_populates="login_history")
+
+    def __repr__(self) -> str:
+        return f"<LoginHistory {self.username_attempted} {self.status}>"
 
 
 class Company(db.Model):

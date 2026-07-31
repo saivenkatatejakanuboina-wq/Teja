@@ -27,6 +27,7 @@ def create_app(config_name: str | None = None) -> Flask:
     _create_database(app)
     _seed_default_admin(app)
     _seed_sample_employee(app)
+    _seed_user_permissions(app)
     _seed_settings(app)
 
     return app
@@ -46,6 +47,7 @@ def _register_extensions(app: Flask) -> None:
 
 
 def _register_blueprints(app: Flask) -> None:
+    from app.blueprints.admin import admin_bp
     from app.blueprints.auth import auth_bp
     from app.blueprints.companies import companies_bp
     from app.blueprints.contacts import contacts_bp
@@ -60,6 +62,7 @@ def _register_blueprints(app: Flask) -> None:
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(admin_bp)
     app.register_blueprint(leads_bp, url_prefix="/leads")
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(followups_bp, url_prefix="/followups")
@@ -129,11 +132,13 @@ def _seed_default_admin(app: Flask) -> None:
                 role=ROLE_ADMIN,
             )
             admin.set_password(password)
+            admin.apply_role_defaults()
             db.session.add(admin)
             db.session.commit()
             app.logger.info("Default admin account created: %s", username)
         elif admin.role != ROLE_ADMIN:
             admin.role = ROLE_ADMIN
+            admin.apply_role_defaults()
             db.session.commit()
 
 
@@ -151,9 +156,25 @@ def _seed_sample_employee(app: Flask) -> None:
                 role=ROLE_EMPLOYEE,
             )
             employee.set_password("employee123")
+            employee.apply_role_defaults()
             db.session.add(employee)
             db.session.commit()
             app.logger.info("Sample employee account created: employee")
+
+
+def _seed_user_permissions(app: Flask) -> None:
+    """Backfill default role permissions for users missing them."""
+    from app.models import User
+
+    with app.app_context():
+        updated = 0
+        for user in User.query.all():
+            if not user.permissions_json or user.permissions_json == "[]":
+                user.apply_role_defaults()
+                updated += 1
+        if updated:
+            db.session.commit()
+            app.logger.info("Applied default permissions to %s user(s)", updated)
 
 
 def _seed_settings(app: Flask) -> None:
