@@ -52,6 +52,7 @@ def _register_blueprints(app: Flask) -> None:
     from app.blueprints.auth import auth_bp
     from app.blueprints.companies import companies_bp
     from app.blueprints.contacts import contacts_bp
+    from app.blueprints.csv_io import csv_bp
     from app.blueprints.customers import customers_bp
     from app.blueprints.dashboard import dashboard_bp
     from app.blueprints.deals import deals_bp
@@ -64,6 +65,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(activities_bp)
+    app.register_blueprint(csv_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(leads_bp, url_prefix="/leads")
     app.register_blueprint(customers_bp, url_prefix="/customers")

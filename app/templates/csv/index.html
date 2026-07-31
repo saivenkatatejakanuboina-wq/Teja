@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Import and export Leads and Customers via CSV. Files are validated before import.</p>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('csv_io.export_leads') }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-download"></i> Export Leads
+</a>
+<a href="{{ url_for('csv_io.export_customers') }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-download"></i> Export Customers
+</a>
+{% endblock %}
+
+{% block content %}
+<ul class="nav nav-tabs mb-4" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if active_tab == 'leads' %}active{% endif %}" id="leads-tab" data-bs-toggle="tab" data-bs-target="#leads-pane" type="button" role="tab">
+      <i class="bi bi-funnel me-1"></i> Leads
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link {% if active_tab == 'customers' %}active{% endif %}" id="customers-tab" data-bs-toggle="tab" data-bs-target="#customers-pane" type="button" role="tab">
+      <i class="bi bi-person-badge me-1"></i> Customers
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content">
+  <div class="tab-pane fade {% if active_tab == 'leads' %}show active{% endif %}" id="leads-pane" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="panel h-100">
+          <div class="panel-header"><h2>Import Leads</h2></div>
+          <p class="text-muted small">Upload a CSV file. The file is fully validated first; nothing is imported if any row is invalid.</p>
+          <form method="POST" action="{{ url_for('csv_io.import_leads') }}" enctype="multipart/form-data" novalidate>
+            {{ lead_form.hidden_tag() }}
+            <div class="mb-3">
+              {{ lead_form.csv_file.label(class='form-label') }}
+              {{ lead_form.csv_file(class='form-control' + (' is-invalid' if lead_form.csv_file.errors else ''), accept='.csv,text/csv') }}
+              {% for error in lead_form.csv_file.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+              {% endfor %}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              {{ lead_form.submit(class='btn btn-primary') }}
+              <a href="{{ url_for('csv_io.sample_leads') }}" class="btn btn-outline-secondary">Download sample</a>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="panel h-100">
+          <div class="panel-header d-flex justify-content-between align-items-center">
+            <h2>Export Leads</h2>
+            <a href="{{ url_for('csv_io.export_leads') }}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-filetype-csv"></i> Download CSV
+            </a>
+          </div>
+          <p class="text-muted small mb-3">Exports all leads using these columns:</p>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% for col in lead_columns %}
+            <code class="small">{{ col }}</code>
+            {% endfor %}
+          </div>
+          <p class="text-muted small mb-1"><strong>lead_source:</strong> {{ lead_sources|join(', ') }}</p>
+          <p class="text-muted small mb-0"><strong>status:</strong> {{ lead_statuses|join(', ') }}</p>
+          <p class="text-muted small mt-2 mb-0"><strong>assigned_to:</strong> active username (optional)</p>
+        </div>
+      </div>
+    </div>
+
+    {% if lead_errors %}
+    <div class="panel mt-4 border-danger">
+      <div class="panel-header">
+        <h2 class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Lead CSV errors</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Field</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for err in lead_errors %}
+            <tr>
+              <td>{% if err.row %}{{ err.row }}{% else %}—{% endif %}</td>
+              <td><code>{{ err.field }}</code></td>
+              <td class="text-danger">{{ err.message }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="tab-pane fade {% if active_tab == 'customers' %}show active{% endif %}" id="customers-pane" role="tabpanel">
+    <div class="row g-4">
+      <div class="col-lg-5">
+        <div class="panel h-100">
+          <div class="panel-header"><h2>Import Customers</h2></div>
+          <p class="text-muted small">Upload a CSV file. Validation runs before any records are created.</p>
+          <form method="POST" action="{{ url_for('csv_io.import_customers') }}" enctype="multipart/form-data" novalidate>
+            {{ customer_form.hidden_tag() }}
+            <div class="mb-3">
+              {{ customer_form.csv_file.label(class='form-label') }}
+              {{ customer_form.csv_file(class='form-control' + (' is-invalid' if customer_form.csv_file.errors else ''), accept='.csv,text/csv') }}
+              {% for error in customer_form.csv_file.errors %}
+              <div class="invalid-feedback d-block">{{ error }}</div>
+              {% endfor %}
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              {{ customer_form.submit(class='btn btn-primary') }}
+              <a href="{{ url_for('csv_io.sample_customers') }}" class="btn btn-outline-secondary">Download sample</a>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="col-lg-7">
+        <div class="panel h-100">
+          <div class="panel-header d-flex justify-content-between align-items-center">
+            <h2>Export Customers</h2>
+            <a href="{{ url_for('csv_io.export_customers') }}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-filetype-csv"></i> Download CSV
+            </a>
+          </div>
+          <p class="text-muted small mb-3">Exports all customers using these columns:</p>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            {% for col in customer_columns %}
+            <code class="small">{{ col }}</code>
+            {% endfor %}
+          </div>
+          <p class="text-muted small mb-0"><strong>status:</strong> Active, Inactive</p>
+        </div>
+      </div>
+    </div>
+
+    {% if customer_errors %}
+    <div class="panel mt-4 border-danger">
+      <div class="panel-header">
+        <h2 class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Customer CSV errors</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Row</th>
+              <th>Field</th>
+              <th>Error</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for err in customer_errors %}
+            <tr>
+              <td>{% if err.row %}{{ err.row }}{% else %}—{% endif %}</td>
+              <td><code>{{ err.field }}</code></td>
+              <td class="text-danger">{{ err.message }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,6 +1,12 @@
 {% extends 'base.html' %}
 
 {% block topbar_actions %}
+<a href="{{ url_for('csv_io.export_customers') }}" class="btn btn-outline-secondary btn-sm">
+  <i class="bi bi-download"></i> Export CSV
+</a>
+<a href="{{ url_for('csv_io.index') }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-upload"></i> Import CSV
+</a>
 <a href="{{ url_for('customers.create') }}" class="btn btn-primary btn-sm">
   <i class="bi bi-person-badge"></i> Add Customer
 </a>

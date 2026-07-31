@@ -522,3 +522,14 @@ class AdminResetPasswordForm(FlaskForm):
         ],
     )
     submit = SubmitField("Reset Password")
+
+
+class CSVImportForm(FlaskForm):
+    csv_file = FileField(
+        "CSV File",
+        validators=[
+            DataRequired(message="Please choose a CSV file."),
+            FileAllowed(["csv"], "CSV files only (.csv)."),
+        ],
+    )
+    submit = SubmitField("Validate & Import")

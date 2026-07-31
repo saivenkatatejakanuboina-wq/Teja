@@ -49,6 +49,9 @@
         <a href="{{ url_for('activities.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('activities.') %}active{% endif %}">
           <i class="bi bi-journal-text"></i> <span>Activity Log</span>
         </a>
+        <a href="{{ url_for('csv_io.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('csv_io.') %}active{% endif %}">
+          <i class="bi bi-filetype-csv"></i> <span>CSV Import / Export</span>
+        </a>
         <a href="{{ url_for('contacts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
           <i class="bi bi-people"></i> <span>Contacts</span>
         </a>

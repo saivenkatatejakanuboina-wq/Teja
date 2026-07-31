@@ -59,6 +59,11 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Tracks Login, Logout, Lead Created/Updated/Deleted, Customer Created, Task Created/Completed
   - Stores Date, Time, IP Address, and User
   - Bootstrap table with search, filters, and pagination (`/activities`)
+- **CSV Import / Export**
+  - Import & export Leads and Customers
+  - Full CSV validation before import (headers, required fields, email, enums)
+  - Bootstrap error table when validation fails — nothing imported on error
+  - Sample CSV downloads at `/csv`
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -104,17 +109,20 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── settings.py    # Settings module
     │   ├── admin.py       # Admin Panel
     │   ├── activities.py  # Activity Log
+    │   ├── csv_io.py      # CSV Import / Export
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
     ├── services/
     │   ├── activity.py    # Activity log helper
     │   ├── admin_service.py
+    │   ├── csv_io.py      # CSV validate / import / export
     │   ├── reports.py     # Report aggregations
     │   └── settings_service.py
     ├── templates/         # Views (MVC)
     │   ├── admin/         # Admin dashboard, users, roles, history
     │   ├── activities/    # Activity Log table
+    │   ├── csv/           # CSV Import / Export UI
     │   └── auth/
     │       ├── login.html
     │       └── register.html
