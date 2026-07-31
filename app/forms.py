@@ -187,6 +187,11 @@ class CustomerForm(FlaskForm):
         ],
     )
     phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    whatsapp_number = StringField(
+        "WhatsApp Number",
+        validators=[Optional(), Length(max=40)],
+        description="International format, e.g. +15550100",
+    )
     address = StringField("Address", validators=[Optional(), Length(max=255)])
     gst = StringField(
         "GST",
@@ -223,6 +228,11 @@ class LeadForm(FlaskForm):
         ],
     )
     phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    whatsapp_number = StringField(
+        "WhatsApp Number",
+        validators=[Optional(), Length(max=40)],
+        description="International format, e.g. +15550100",
+    )
     country = StringField("Country", validators=[Optional(), Length(max=100)])
     industry = StringField("Industry", validators=[Optional(), Length(max=100)])
     lead_source = SelectField(
@@ -561,6 +571,68 @@ class ComposeEmailForm(FlaskForm):
         ],
     )
     submit = SubmitField("Send Email")
+
+
+class ComposeWhatsAppForm(FlaskForm):
+    lead_id = SelectField("Lead", coerce=int, validators=[Optional()])
+    customer_id = SelectField("Customer", coerce=int, validators=[Optional()])
+    template_id = SelectField("Predefined Message", coerce=int, validators=[Optional()])
+    to_number = StringField(
+        "WhatsApp Number",
+        validators=[
+            DataRequired(message="WhatsApp number is required."),
+            Length(max=40),
+        ],
+    )
+    message_body = TextAreaField(
+        "Message",
+        validators=[
+            DataRequired(message="Message is required."),
+            Length(max=4000),
+        ],
+    )
+    submit = SubmitField("Open WhatsApp Chat")
+
+
+class WhatsAppTemplateForm(FlaskForm):
+    name = StringField(
+        "Template Name",
+        validators=[DataRequired(message="Name is required."), Length(max=120)],
+    )
+    body = TextAreaField(
+        "Message",
+        validators=[DataRequired(message="Message is required."), Length(max=4000)],
+    )
+    is_active = BooleanField("Active", default=True)
+    submit = SubmitField("Save Template")
+
+
+class WhatsAppSettingsForm(FlaskForm):
+    whatsapp_provider = SelectField(
+        "Provider",
+        choices=[
+            ("click_to_chat", "Click-to-Chat (wa.me)"),
+            ("business_api", "WhatsApp Business API (future)"),
+        ],
+        validators=[DataRequired()],
+    )
+    whatsapp_api_base_url = StringField(
+        "API Base URL",
+        validators=[Optional(), Length(max=255)],
+    )
+    whatsapp_api_token = PasswordField(
+        "API Token",
+        validators=[Optional(), Length(max=512)],
+    )
+    whatsapp_phone_number_id = StringField(
+        "Phone Number ID",
+        validators=[Optional(), Length(max=120)],
+    )
+    whatsapp_business_account_id = StringField(
+        "Business Account ID",
+        validators=[Optional(), Length(max=120)],
+    )
+    submit = SubmitField("Save WhatsApp Settings")
 
 
 class EmailTemplateForm(FlaskForm):

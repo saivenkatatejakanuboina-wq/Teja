@@ -41,6 +41,9 @@ def _apply_lead_data(lead: Lead, form: LeadForm) -> None:
     lead.company = form.company.data.strip() if form.company.data else None
     lead.email = form.email.data.strip().lower() if form.email.data else None
     lead.phone = form.phone.data.strip() if form.phone.data else None
+    lead.whatsapp_number = (
+        form.whatsapp_number.data.strip() if form.whatsapp_number.data else None
+    )
     lead.country = form.country.data.strip() if form.country.data else None
     lead.industry = form.industry.data.strip() if form.industry.data else None
     lead.lead_source = form.lead_source.data
@@ -135,7 +138,7 @@ def create():
 @login_required
 def detail(lead_id: int):
     """Lead detail with recent activity log and email history."""
-    from app.models import ActivityLog, EmailMessage
+    from app.models import ActivityLog, EmailMessage, WhatsAppMessage
 
     lead = _get_lead_or_404(lead_id)
     activities = (
@@ -150,11 +153,18 @@ def detail(lead_id: int):
         .limit(10)
         .all()
     )
+    whatsapp_messages = (
+        WhatsAppMessage.query.filter_by(lead_id=lead.id)
+        .order_by(WhatsAppMessage.created_at.desc())
+        .limit(10)
+        .all()
+    )
     return render_template(
         "leads/detail.html",
         lead=lead,
         activities=activities,
         emails=emails,
+        whatsapp_messages=whatsapp_messages,
         title=lead.name,
     )
 

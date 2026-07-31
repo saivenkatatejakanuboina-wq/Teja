@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 
 {% block topbar_actions %}
+{% if customer.effective_whatsapp %}
+<a href="{{ url_for('whatsapp.compose', customer_id=customer.id) }}" class="btn btn-success btn-sm">
+  <i class="bi bi-whatsapp"></i> WhatsApp
+</a>
+{% endif %}
 <a href="{{ url_for('customers.edit', customer_id=customer.id) }}" class="btn btn-primary btn-sm">
   <i class="bi bi-pencil"></i> Edit
 </a>
@@ -37,6 +42,17 @@
         <div>
           <dt>Phone</dt>
           <dd>{{ customer.phone or '—' }}</dd>
+        </div>
+        <div>
+          <dt>WhatsApp</dt>
+          <dd>
+            {% if customer.effective_whatsapp %}
+            <span class="font-monospace">{{ customer.whatsapp_number or customer.phone }}</span>
+            {% if not customer.whatsapp_number and customer.phone %}
+            <span class="text-muted small">(from phone)</span>
+            {% endif %}
+            {% else %}—{% endif %}
+          </dd>
         </div>
         <div>
           <dt>GST</dt>
@@ -83,14 +99,60 @@
   </div>
 
   <div class="col-lg-5">
+    <div class="panel mb-4">
+      <div class="panel-header d-flex justify-content-between align-items-center">
+        <h2>WhatsApp History</h2>
+        {% if customer.effective_whatsapp %}
+        <a href="{{ url_for('whatsapp.compose', customer_id=customer.id) }}" class="btn btn-sm btn-outline-success">Compose</a>
+        {% endif %}
+      </div>
+      {% if whatsapp_messages %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Message</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for msg in whatsapp_messages %}
+            <tr>
+              <td>
+                <div class="text-truncate" style="max-width: 180px;">{{ msg.message_body }}</div>
+                <div class="text-muted small">{{ msg.created_at.strftime('%b %d, %H:%M') }}</div>
+              </td>
+              <td>
+                {% if msg.status in ['opened', 'sent'] %}
+                <span class="badge text-bg-success">{{ msg.status_label }}</span>
+                {% elif msg.status == 'failed' %}
+                <span class="badge text-bg-danger">Failed</span>
+                {% else %}
+                <span class="badge text-bg-secondary">{{ msg.status_label }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a href="{{ url_for('whatsapp.detail', message_id=msg.id) }}" class="btn btn-sm btn-link">View</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state mb-0">No WhatsApp messages yet.</p>
+      {% endif %}
+    </div>
+
     <div class="panel">
       <div class="panel-header"><h2>Activity</h2></div>
       {% if activities %}
       <ul class="activity-feed">
         {% for item in activities %}
         <li>
-          <div class="activity-icon tone-{% if item.action == 'created' or item.action == 'converted' %}success{% elif item.action == 'deleted' %}danger{% else %}primary{% endif %}">
-            <i class="bi bi-{% if item.action == 'converted' %}arrow-left-right{% elif item.action == 'created' %}plus-lg{% elif item.action == 'deleted' %}trash{% else %}pencil{% endif %}"></i>
+          <div class="activity-icon tone-{% if item.action == 'created' or item.action == 'converted' or item.action == 'whatsapp_opened' %}success{% elif item.action == 'deleted' or item.action == 'whatsapp_failed' %}danger{% else %}primary{% endif %}">
+            <i class="bi bi-{% if item.action == 'converted' %}arrow-left-right{% elif item.action == 'created' %}plus-lg{% elif item.action == 'deleted' %}trash{% elif item.action.startswith('whatsapp') %}whatsapp{% else %}pencil{% endif %}"></i>
           </div>
           <div class="activity-body">
             <strong>{{ item.message }}</strong>

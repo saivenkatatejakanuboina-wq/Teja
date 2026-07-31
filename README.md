@@ -69,6 +69,11 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Email templates with placeholders (`{{name}}`, `{{company}}`, etc.)
   - Track sent/failed emails and store full email history
   - Uses SMTP settings from Settings → SMTP
+- **WhatsApp Integration**
+  - Store WhatsApp numbers on Leads and Customers
+  - Open WhatsApp chat (`wa.me`) with predefined messages
+  - Message history with status tracking
+  - Provider scaffold ready for WhatsApp Business API
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -116,6 +121,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── activities.py  # Activity Log
     │   ├── csv_io.py      # CSV Import / Export
     │   ├── emails.py      # SMTP compose, templates, history
+    │   ├── whatsapp.py    # WhatsApp compose, templates, history
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
@@ -124,6 +130,8 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── admin_service.py
     │   ├── csv_io.py      # CSV validate / import / export
     │   ├── email_service.py
+    │   ├── whatsapp_service.py
+    │   ├── whatsapp_providers.py  # click-to-chat + Business API stub
     │   ├── reports.py     # Report aggregations
     │   └── settings_service.py
     ├── templates/         # Views (MVC)
@@ -131,6 +139,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── activities/    # Activity Log table
     │   ├── csv/           # CSV Import / Export UI
     │   ├── emails/        # Compose, templates, history
+    │   ├── whatsapp/      # WhatsApp compose, templates, history
     │   └── auth/
     │       ├── login.html
     │       └── register.html

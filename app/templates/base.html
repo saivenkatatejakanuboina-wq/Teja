@@ -55,6 +55,9 @@
         <a href="{{ url_for('emails.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('emails.') %}active{% endif %}">
           <i class="bi bi-envelope"></i> <span>Emails</span>
         </a>
+        <a href="{{ url_for('whatsapp.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('whatsapp.') %}active{% endif %}">
+          <i class="bi bi-whatsapp"></i> <span>WhatsApp</span>
+        </a>
         <a href="{{ url_for('contacts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
           <i class="bi bi-people"></i> <span>Contacts</span>
         </a>

@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">{{ provider_message }}</p>
+{% endblock %}
+
+{% block topbar_actions %}
+{% if current_user.is_admin %}
+<a href="{{ url_for('whatsapp.settings') }}" class="btn btn-outline-secondary btn-sm">
+  <i class="bi bi-gear"></i> Settings
+</a>
+{% endif %}
+<a href="{{ url_for('whatsapp.templates') }}" class="btn btn-outline-secondary btn-sm">Templates</a>
+<a href="{{ url_for('whatsapp.compose') }}" class="btn btn-success btn-sm">
+  <i class="bi bi-whatsapp"></i> Compose
+</a>
+{% endblock %}
+
+{% block content %}
+<form class="filter-bar lead-filter-bar" method="GET">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search number or message...">
+  </div>
+  <select name="status" class="form-select">
+    <option value="">All statuses</option>
+    <option value="opened" {% if status == 'opened' %}selected{% endif %}>Opened</option>
+    <option value="sent" {% if status == 'sent' %}selected{% endif %}>Sent</option>
+    <option value="failed" {% if status == 'failed' %}selected{% endif %}>Failed</option>
+    <option value="queued" {% if status == 'queued' %}selected{% endif %}>Queued</option>
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Filter</button>
+  {% if q or status %}
+  <a href="{{ url_for('whatsapp.index') }}" class="btn btn-link">Clear</a>
+  {% endif %}
+</form>
+
+<div class="panel">
+  {% if messages %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>To</th>
+          <th>Message</th>
+          <th>Contact</th>
+          <th>Provider</th>
+          <th>Status</th>
+          <th>When</th>
+          <th class="text-end">View</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for msg in messages %}
+        <tr>
+          <td class="font-monospace small">{{ msg.to_number }}</td>
+          <td>
+            <div class="text-truncate" style="max-width: 280px;">{{ msg.message_body }}</div>
+          </td>
+          <td>
+            {% if msg.lead %}
+            <a href="{{ url_for('leads.detail', lead_id=msg.lead.id) }}">{{ msg.lead.name }}</a>
+            {% elif msg.customer %}
+            <a href="{{ url_for('customers.detail', customer_id=msg.customer.id) }}">{{ msg.customer.name }}</a>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="small">{{ msg.provider }}</td>
+          <td>
+            {% if msg.status == 'opened' or msg.status == 'sent' %}
+            <span class="badge text-bg-success">{{ msg.status_label }}</span>
+            {% elif msg.status == 'failed' %}
+            <span class="badge text-bg-danger">Failed</span>
+            {% else %}
+            <span class="badge text-bg-secondary">{{ msg.status_label }}</span>
+            {% endif %}
+          </td>
+          <td class="small text-muted">{{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td class="text-end">
+            <a href="{{ url_for('whatsapp.detail', message_id=msg.id) }}" class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-eye"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if pagination.pages > 1 %}
+  <nav class="mt-3">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('whatsapp.index', page=pagination.prev_num, q=q, status=status) if pagination.has_prev else '#' }}">Previous</a>
+      </li>
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('whatsapp.index', page=p, q=q, status=status) }}">{{ p }}</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('whatsapp.index', page=pagination.next_num, q=q, status=status) if pagination.has_next else '#' }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+  {% else %}
+  <p class="empty-state mb-0">No WhatsApp messages yet. <a href="{{ url_for('whatsapp.compose') }}">Compose one</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

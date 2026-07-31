@@ -206,6 +206,17 @@ class User(UserMixin, db.Model):
         back_populates="created_by",
         lazy="dynamic",
     )
+    whatsapp_messages = db.relationship(
+        "WhatsAppMessage",
+        back_populates="sent_by",
+        lazy="dynamic",
+        foreign_keys="WhatsAppMessage.sent_by_id",
+    )
+    whatsapp_templates = db.relationship(
+        "WhatsAppTemplate",
+        back_populates="created_by",
+        lazy="dynamic",
+    )
 
     def set_password(self, password: str) -> None:
         """Hash and store the user's password."""
@@ -397,6 +408,7 @@ class Lead(db.Model):
     company = db.Column(db.String(150), index=True)
     email = db.Column(db.String(120), index=True)
     phone = db.Column(db.String(40))
+    whatsapp_number = db.Column(db.String(40), index=True)
     country = db.Column(db.String(100))
     industry = db.Column(db.String(100))
     lead_source = db.Column(db.String(60), default="Website", nullable=False)
@@ -441,10 +453,20 @@ class Lead(db.Model):
         lazy="dynamic",
         foreign_keys="EmailMessage.lead_id",
     )
+    whatsapp_messages = db.relationship(
+        "WhatsAppMessage",
+        back_populates="lead",
+        lazy="dynamic",
+        foreign_keys="WhatsAppMessage.lead_id",
+    )
 
     @property
     def is_converted(self) -> bool:
         return self.customer is not None
+
+    @property
+    def effective_whatsapp(self) -> str | None:
+        return self.whatsapp_number or self.phone
 
     def __repr__(self) -> str:
         return f"<Lead {self.name}>"
@@ -459,6 +481,7 @@ class Customer(db.Model):
     name = db.Column(db.String(150), nullable=False, index=True)
     email = db.Column(db.String(120), index=True)
     phone = db.Column(db.String(40))
+    whatsapp_number = db.Column(db.String(40), index=True)
     address = db.Column(db.String(255))
     gst = db.Column(db.String(40), index=True)
     website = db.Column(db.String(200))
@@ -485,6 +508,16 @@ class Customer(db.Model):
         back_populates="customer",
         foreign_keys=[lead_id],
     )
+    whatsapp_messages = db.relationship(
+        "WhatsAppMessage",
+        back_populates="customer",
+        lazy="dynamic",
+        foreign_keys="WhatsAppMessage.customer_id",
+    )
+
+    @property
+    def effective_whatsapp(self) -> str | None:
+        return self.whatsapp_number or self.phone
 
     def __repr__(self) -> str:
         return f"<Customer {self.name}>"
@@ -621,6 +654,12 @@ ACTIVITY_LABELS = {
     ("imported", "lead"): "Leads Imported",
     ("email_sent", "lead"): "Email Sent",
     ("email_failed", "lead"): "Email Failed",
+    ("whatsapp_opened", "lead"): "WhatsApp Opened",
+    ("whatsapp_sent", "lead"): "WhatsApp Sent",
+    ("whatsapp_failed", "lead"): "WhatsApp Failed",
+    ("whatsapp_opened", "customer"): "WhatsApp Opened",
+    ("whatsapp_sent", "customer"): "WhatsApp Sent",
+    ("whatsapp_failed", "customer"): "WhatsApp Failed",
     ("created", "customer"): "Customer Created",
     ("updated", "customer"): "Customer Updated",
     ("deleted", "customer"): "Customer Deleted",
@@ -713,6 +752,13 @@ class AppSettings(db.Model):
     smtp_use_tls = db.Column(db.Boolean, default=True, nullable=False)
     smtp_from_email = db.Column(db.String(150))
 
+    # WhatsApp integration (click-to-chat today; Business API credentials for later)
+    whatsapp_provider = db.Column(db.String(40), default="click_to_chat", nullable=False)
+    whatsapp_api_base_url = db.Column(db.String(255), default="https://graph.facebook.com/v19.0")
+    whatsapp_api_token = db.Column(db.String(512))
+    whatsapp_phone_number_id = db.Column(db.String(120))
+    whatsapp_business_account_id = db.Column(db.String(120))
+
     updated_at = db.Column(
         db.DateTime,
         default=lambda: datetime.now(timezone.utc),
@@ -725,6 +771,80 @@ class AppSettings(db.Model):
 
 
 EMAIL_STATUSES = ("queued", "sent", "failed")
+
+
+class WhatsAppTemplate(db.Model):
+    """Reusable predefined WhatsApp messages."""
+
+    __tablename__ = "whatsapp_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False, unique=True, index=True)
+    body = db.Column(db.Text, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    created_by = db.relationship("User", back_populates="whatsapp_templates")
+    messages = db.relationship("WhatsAppMessage", back_populates="template", lazy="dynamic")
+
+    def __repr__(self) -> str:
+        return f"<WhatsAppTemplate {self.name}>"
+
+
+class WhatsAppMessage(db.Model):
+    """History of WhatsApp messages opened/sent from the CRM."""
+
+    __tablename__ = "whatsapp_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    to_number = db.Column(db.String(40), nullable=False, index=True)
+    message_body = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default="queued", nullable=False, index=True)
+    provider = db.Column(db.String(40), default="click_to_chat", nullable=False)
+    external_url = db.Column(db.String(500))
+    external_id = db.Column(db.String(120))
+    error_message = db.Column(db.Text)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id", ondelete="SET NULL"), index=True)
+    customer_id = db.Column(
+        db.Integer, db.ForeignKey("customers.id", ondelete="SET NULL"), index=True
+    )
+    template_id = db.Column(
+        db.Integer, db.ForeignKey("whatsapp_templates.id", ondelete="SET NULL")
+    )
+    sent_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    sent_at = db.Column(db.DateTime)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True
+    )
+
+    lead = db.relationship("Lead", back_populates="whatsapp_messages", foreign_keys=[lead_id])
+    customer = db.relationship(
+        "Customer",
+        back_populates="whatsapp_messages",
+        foreign_keys=[customer_id],
+    )
+    template = db.relationship("WhatsAppTemplate", back_populates="messages")
+    sent_by = db.relationship(
+        "User",
+        back_populates="whatsapp_messages",
+        foreign_keys=[sent_by_id],
+    )
+
+    @property
+    def status_label(self) -> str:
+        return self.status.replace("_", " ").title()
+
+    def __repr__(self) -> str:
+        return f"<WhatsAppMessage {self.id} {self.status}>"
 
 
 class EmailTemplate(db.Model):

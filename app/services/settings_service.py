@@ -28,6 +28,8 @@ def get_settings() -> AppSettings:
             theme="light",
             smtp_port=587,
             smtp_use_tls=True,
+            whatsapp_provider="click_to_chat",
+            whatsapp_api_base_url="https://graph.facebook.com/v19.0",
         )
         db.session.add(settings)
         db.session.commit()

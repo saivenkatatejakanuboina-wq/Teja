@@ -31,6 +31,11 @@
         {{ form.phone.label(class='form-label') }}
         {{ form.phone(class='form-control') }}
       </div>
+      <div class="col-md-6">
+        {{ form.whatsapp_number.label(class='form-label') }}
+        {{ form.whatsapp_number(class='form-control', placeholder='+15550100') }}
+        <div class="form-text">Used for WhatsApp chat. Falls back to phone if empty.</div>
+      </div>
       <div class="col-12">
         {{ form.address.label(class='form-label') }}
         {{ form.address(class='form-control', placeholder='Street, city, state, postal code') }}

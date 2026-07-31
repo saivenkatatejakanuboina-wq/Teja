@@ -30,6 +30,7 @@ def create_app(config_name: str | None = None) -> Flask:
     _seed_user_permissions(app)
     _seed_settings(app)
     _seed_email_templates(app)
+    _seed_whatsapp_templates(app)
 
     return app
 
@@ -63,12 +64,14 @@ def _register_blueprints(app: Flask) -> None:
     from app.blueprints.reports import reports_bp
     from app.blueprints.settings import settings_bp
     from app.blueprints.tasks import tasks_bp
+    from app.blueprints.whatsapp import whatsapp_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(activities_bp)
     app.register_blueprint(csv_bp)
     app.register_blueprint(emails_bp)
+    app.register_blueprint(whatsapp_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(leads_bp, url_prefix="/leads")
     app.register_blueprint(customers_bp, url_prefix="/customers")
@@ -127,12 +130,32 @@ def _ensure_sqlite_columns() -> None:
     from sqlalchemy import inspect, text
 
     inspector = inspect(db.engine)
-    if "activity_logs" not in inspector.get_table_names():
-        return
-    columns = {col["name"] for col in inspector.get_columns("activity_logs")}
-    if "ip_address" not in columns:
-        db.session.execute(text("ALTER TABLE activity_logs ADD COLUMN ip_address VARCHAR(64)"))
-        db.session.commit()
+    table_columns = {
+        table: {col["name"] for col in inspector.get_columns(table)}
+        for table in inspector.get_table_names()
+    }
+
+    alterations = {
+        "activity_logs": [("ip_address", "VARCHAR(64)")],
+        "leads": [("whatsapp_number", "VARCHAR(40)")],
+        "customers": [("whatsapp_number", "VARCHAR(40)")],
+        "app_settings": [
+            ("whatsapp_provider", "VARCHAR(40) DEFAULT 'click_to_chat'"),
+            ("whatsapp_api_base_url", "VARCHAR(255)"),
+            ("whatsapp_api_token", "VARCHAR(512)"),
+            ("whatsapp_phone_number_id", "VARCHAR(120)"),
+            ("whatsapp_business_account_id", "VARCHAR(120)"),
+        ],
+    }
+
+    for table, columns in alterations.items():
+        existing = table_columns.get(table)
+        if existing is None:
+            continue
+        for name, col_type in columns:
+            if name not in existing:
+                db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {col_type}"))
+    db.session.commit()
 
 
 def _seed_default_admin(app: Flask) -> None:
@@ -216,3 +239,15 @@ def _seed_email_templates(app: Flask) -> None:
         created = seed_default_templates(user_id=admin.id if admin else None)
         if created:
             app.logger.info("Seeded %s default email template(s)", created)
+
+
+def _seed_whatsapp_templates(app: Flask) -> None:
+    """Seed starter WhatsApp predefined messages."""
+    with app.app_context():
+        from app.models import User
+        from app.services.whatsapp_service import seed_default_templates
+
+        admin = User.query.filter_by(role="admin").first()
+        created = seed_default_templates(user_id=admin.id if admin else None)
+        if created:
+            app.logger.info("Seeded %s default WhatsApp template(s)", created)

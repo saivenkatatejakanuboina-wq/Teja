@@ -27,6 +27,9 @@ def _apply_customer_data(customer: Customer, form: CustomerForm) -> None:
     )
     customer.email = form.email.data.strip().lower() if form.email.data else None
     customer.phone = form.phone.data.strip() if form.phone.data else None
+    customer.whatsapp_number = (
+        form.whatsapp_number.data.strip() if form.whatsapp_number.data else None
+    )
     customer.address = form.address.data.strip() if form.address.data else None
     customer.gst = form.gst.data.strip().upper() if form.gst.data else None
     customer.website = form.website.data.strip() if form.website.data else None
@@ -103,6 +106,8 @@ def create():
 @login_required
 def detail(customer_id: int):
     """Customer details page."""
+    from app.models import WhatsAppMessage
+
     customer = _get_customer_or_404(customer_id)
     activities = (
         ActivityLog.query.filter(
@@ -118,10 +123,17 @@ def detail(customer_id: int):
         .limit(20)
         .all()
     )
+    whatsapp_messages = (
+        WhatsAppMessage.query.filter_by(customer_id=customer.id)
+        .order_by(WhatsAppMessage.created_at.desc())
+        .limit(10)
+        .all()
+    )
     return render_template(
         "customers/detail.html",
         customer=customer,
         activities=activities,
+        whatsapp_messages=whatsapp_messages,
         title=customer.name,
     )
 
@@ -198,6 +210,7 @@ def convert_from_lead(lead_id: int):
         form.primary_contact.data = lead.name
         form.email.data = lead.email
         form.phone.data = lead.phone
+        form.whatsapp_number.data = lead.whatsapp_number or lead.phone
         form.industry.data = lead.industry
         form.country.data = lead.country
         form.notes.data = lead.notes

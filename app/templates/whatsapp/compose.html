@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Open a WhatsApp chat with a predefined message. History is recorded automatically.</p>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('whatsapp.index') }}" class="btn btn-outline-secondary btn-sm">History</a>
+<a href="{{ url_for('whatsapp.templates') }}" class="btn btn-outline-primary btn-sm">Templates</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 justify-content-center">
+  <div class="col-xl-8">
+    <div class="panel compose-window">
+      <div class="compose-window-header">
+        <div>
+          <h2 class="mb-1"><i class="bi bi-whatsapp me-2 text-success"></i>WhatsApp Compose</h2>
+          <p class="text-muted small mb-0">{{ provider_message }}</p>
+        </div>
+        {% if lead %}
+        <a href="{{ url_for('leads.detail', lead_id=lead.id) }}" class="btn btn-sm btn-outline-secondary">Back to lead</a>
+        {% elif customer %}
+        <a href="{{ url_for('customers.detail', customer_id=customer.id) }}" class="btn btn-sm btn-outline-secondary">Back to customer</a>
+        {% endif %}
+      </div>
+
+      <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-md-6">
+            {{ form.lead_id.label(class='form-label') }}
+            {{ form.lead_id(class='form-select', id='waLeadSelect') }}
+          </div>
+          <div class="col-md-6">
+            {{ form.customer_id.label(class='form-label') }}
+            {{ form.customer_id(class='form-select', id='waCustomerSelect') }}
+          </div>
+          <div class="col-md-6">
+            {{ form.template_id.label(class='form-label') }}
+            {{ form.template_id(class='form-select', id='waTemplateSelect') }}
+          </div>
+          <div class="col-md-6">
+            {{ form.to_number.label(class='form-label') }}
+            {{ form.to_number(class='form-control' + (' is-invalid' if form.to_number.errors else ''), id='waToNumber', placeholder='+15550100') }}
+            {% for error in form.to_number.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            <div class="form-text">Use international format with country code.</div>
+          </div>
+          <div class="col-12">
+            {{ form.message_body.label(class='form-label') }}
+            {{ form.message_body(class='form-control compose-body' + (' is-invalid' if form.message_body.errors else ''), id='waMessageBody', rows=8) }}
+            {% for error in form.message_body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <div class="compose-window-footer mt-4">
+          <div class="text-muted small">
+            Placeholders:
+            {% for key in placeholder_help %}
+            <code>{{ '{{' ~ key ~ '}}' }}</code>
+            {% endfor %}
+          </div>
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('whatsapp.index') }}" class="btn btn-outline-secondary">Cancel</a>
+            {{ form.submit(class='btn btn-success') }}
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const templates = {{ templates_json|tojson }};
+  const leadSelect = document.getElementById('waLeadSelect');
+  const customerSelect = document.getElementById('waCustomerSelect');
+  const templateSelect = document.getElementById('waTemplateSelect');
+  const toNumber = document.getElementById('waToNumber');
+  const messageBody = document.getElementById('waMessageBody');
+
+  function numberFromOption(selectEl) {
+    const opt = selectEl.options[selectEl.selectedIndex];
+    if (!opt) return '';
+    const match = opt.text.match(/\(([^)]+)\)\s*$/);
+    if (!match) return '';
+    const value = match[1];
+    return value.includes('no WhatsApp') ? '' : value;
+  }
+
+  function applyTemplate() {
+    const id = Number(templateSelect.value || 0);
+    if (!id) return;
+    const leadId = Number(leadSelect.value || 0);
+    const customerId = Number(customerSelect.value || 0);
+    const url = `{{ url_for('whatsapp.template_preview') }}?template_id=${id}&lead_id=${leadId || ''}&customer_id=${customerId || ''}`;
+    fetch(url, { headers: { 'Accept': 'application/json' } })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (!data) return;
+        messageBody.value = data.body || '';
+      })
+      .catch(() => {
+        const local = templates.find((t) => t.id === id);
+        if (local) messageBody.value = local.rendered_body || local.body;
+      });
+  }
+
+  if (templateSelect) templateSelect.addEventListener('change', applyTemplate);
+  if (leadSelect) {
+    leadSelect.addEventListener('change', () => {
+      const num = numberFromOption(leadSelect);
+      if (num) toNumber.value = num;
+      if (Number(templateSelect.value || 0)) applyTemplate();
+    });
+  }
+  if (customerSelect) {
+    customerSelect.addEventListener('change', () => {
+      const num = numberFromOption(customerSelect);
+      if (num) toNumber.value = num;
+      if (Number(templateSelect.value || 0)) applyTemplate();
+    });
+  }
+</script>
+{% endblock %}
