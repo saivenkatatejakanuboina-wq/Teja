@@ -1,7 +1,8 @@
-"""WTForms for the Mini CRM."""
+"""WTForms for the Mini CRM — includes auth form validation."""
 
 from flask_wtf import FlaskForm
 from wtforms import (
+    BooleanField,
     DateField,
     FloatField,
     IntegerField,
@@ -10,6 +11,7 @@ from wtforms import (
     StringField,
     SubmitField,
     TextAreaField,
+    TimeField,
 )
 from wtforms.validators import (
     DataRequired,
@@ -21,7 +23,14 @@ from wtforms.validators import (
     ValidationError,
 )
 
-from app.models import DEAL_STAGES, User
+from app.models import (
+    DEAL_STAGES,
+    FOLLOWUP_STATUSES,
+    FOLLOWUP_TYPES,
+    LEAD_SOURCES,
+    LEAD_STATUSES,
+    User,
+)
 
 CONTACT_STATUSES = [
     ("Lead", "Lead"),
@@ -32,21 +41,53 @@ CONTACT_STATUSES = [
 
 
 class LoginForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired(), Length(max=80)])
-    password = PasswordField("Password", validators=[DataRequired()])
+    username = StringField(
+        "Username",
+        validators=[DataRequired(message="Username is required."), Length(max=80)],
+    )
+    password = PasswordField(
+        "Password",
+        validators=[DataRequired(message="Password is required.")],
+    )
+    remember_me = BooleanField("Remember me", default=False)
     submit = SubmitField("Sign In")
 
 
 class RegisterForm(FlaskForm):
-    full_name = StringField("Full Name", validators=[DataRequired(), Length(max=120)])
-    username = StringField("Username", validators=[DataRequired(), Length(min=3, max=80)])
-    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=120)])
-    password = PasswordField("Password", validators=[DataRequired(), Length(min=6)])
+    full_name = StringField(
+        "Full Name",
+        validators=[DataRequired(message="Full name is required."), Length(max=120)],
+    )
+    username = StringField(
+        "Username",
+        validators=[
+            DataRequired(message="Username is required."),
+            Length(min=3, max=80, message="Username must be 3–80 characters."),
+        ],
+    )
+    email = StringField(
+        "Email",
+        validators=[
+            DataRequired(message="Email is required."),
+            Email(message="Enter a valid email address."),
+            Length(max=120),
+        ],
+    )
+    password = PasswordField(
+        "Password",
+        validators=[
+            DataRequired(message="Password is required."),
+            Length(min=6, message="Password must be at least 6 characters."),
+        ],
+    )
     confirm_password = PasswordField(
         "Confirm Password",
-        validators=[DataRequired(), EqualTo("password", message="Passwords must match.")],
+        validators=[
+            DataRequired(message="Please confirm your password."),
+            EqualTo("password", message="Passwords must match."),
+        ],
     )
-    submit = SubmitField("Create Account")
+    submit = SubmitField("Create Employee Account")
 
     def validate_username(self, field):
         if User.query.filter_by(username=field.data.strip()).first():
@@ -100,3 +141,127 @@ class DealForm(FlaskForm):
     contact_id = SelectField("Contact", coerce=int, validators=[Optional()])
     notes = TextAreaField("Notes", validators=[Optional(), Length(max=2000)])
     submit = SubmitField("Save Deal")
+
+
+CUSTOMER_STATUSES = [
+    ("Active", "Active"),
+    ("Inactive", "Inactive"),
+]
+
+
+class CustomerForm(FlaskForm):
+    name = StringField(
+        "Customer Name",
+        validators=[
+            DataRequired(message="Customer name is required."),
+            Length(max=150),
+        ],
+    )
+    primary_contact = StringField(
+        "Primary Contact",
+        validators=[Optional(), Length(max=150)],
+    )
+    email = StringField(
+        "Email",
+        validators=[
+            Optional(),
+            Email(message="Enter a valid email address."),
+            Length(max=120),
+        ],
+    )
+    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    address = StringField("Address", validators=[Optional(), Length(max=255)])
+    gst = StringField(
+        "GST",
+        validators=[Optional(), Length(max=40)],
+    )
+    website = StringField("Website", validators=[Optional(), Length(max=200)])
+    industry = StringField("Industry", validators=[Optional(), Length(max=100)])
+    country = StringField("Country", validators=[Optional(), Length(max=100)])
+    status = SelectField(
+        "Status",
+        choices=CUSTOMER_STATUSES,
+        validators=[DataRequired()],
+        default="Active",
+    )
+    notes = TextAreaField("Notes", validators=[Optional(), Length(max=5000)])
+    submit = SubmitField("Save Customer")
+
+
+class LeadForm(FlaskForm):
+    name = StringField(
+        "Lead Name",
+        validators=[
+            DataRequired(message="Lead name is required."),
+            Length(max=150),
+        ],
+    )
+    company = StringField("Company", validators=[Optional(), Length(max=150)])
+    email = StringField(
+        "Email",
+        validators=[
+            Optional(),
+            Email(message="Enter a valid email address."),
+            Length(max=120),
+        ],
+    )
+    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    country = StringField("Country", validators=[Optional(), Length(max=100)])
+    industry = StringField("Industry", validators=[Optional(), Length(max=100)])
+    lead_source = SelectField(
+        "Lead Source",
+        choices=[(s, s) for s in LEAD_SOURCES],
+        validators=[DataRequired(message="Lead source is required.")],
+    )
+    status = SelectField(
+        "Status",
+        choices=[(s, s) for s in LEAD_STATUSES],
+        validators=[DataRequired(message="Status is required.")],
+    )
+    assigned_to_id = SelectField(
+        "Assigned Employee",
+        coerce=int,
+        validators=[Optional()],
+    )
+    notes = TextAreaField("Notes", validators=[Optional(), Length(max=5000)])
+    submit = SubmitField("Save Lead")
+
+
+class FollowUpForm(FlaskForm):
+    title = StringField(
+        "Title",
+        validators=[
+            DataRequired(message="Title is required."),
+            Length(max=150),
+        ],
+    )
+    followup_type = SelectField(
+        "Type",
+        choices=[(t, t) for t in FOLLOWUP_TYPES],
+        validators=[DataRequired(message="Follow-up type is required.")],
+    )
+    reminder_date = DateField(
+        "Reminder Date",
+        validators=[DataRequired(message="Reminder date is required.")],
+        format="%Y-%m-%d",
+    )
+    reminder_time = TimeField(
+        "Reminder Time",
+        validators=[DataRequired(message="Reminder time is required.")],
+        format="%H:%M",
+    )
+    status = SelectField(
+        "Status",
+        choices=[(s, s) for s in FOLLOWUP_STATUSES],
+        validators=[DataRequired()],
+        default="Scheduled",
+    )
+    assigned_to_id = SelectField(
+        "Assigned Employee",
+        coerce=int,
+        validators=[DataRequired(message="Please assign an employee.")],
+    )
+    lead_id = SelectField("Related Lead", coerce=int, validators=[Optional()])
+    customer_id = SelectField("Related Customer", coerce=int, validators=[Optional()])
+    remarks = TextAreaField("Remarks", validators=[Optional(), Length(max=5000)])
+    submit = SubmitField("Save Follow-up")
