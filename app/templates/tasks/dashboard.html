@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('tasks.index') }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-list-check"></i> All Tasks
+</a>
+<a href="{{ url_for('tasks.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg"></i> Create Task
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="kpi-grid task-kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon leads"><i class="bi bi-list-task"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Total Tasks</span>
+      <strong class="kpi-value">{{ total }}</strong>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon today"><i class="bi bi-circle"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">To Do</span>
+      <strong class="kpi-value">{{ todo }}</strong>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon followups"><i class="bi bi-arrow-repeat"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">In Progress</span>
+      <strong class="kpi-value">{{ in_progress }}</strong>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon won"><i class="bi bi-check2-circle"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Completed</span>
+      <strong class="kpi-value">{{ completed }}</strong>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon lost"><i class="bi bi-exclamation-triangle"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Overdue</span>
+      <strong class="kpi-value">{{ overdue }}</strong>
+      <span class="kpi-meta warn">Needs attention</span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon customers"><i class="bi bi-calendar-event"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Due Today</span>
+      <strong class="kpi-value">{{ due_today }}</strong>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-4">
+    <div class="panel h-100">
+      <div class="panel-header"><h2>By Priority</h2></div>
+      <ul class="stage-list">
+        {% for p in priorities %}
+        <li>
+          <span class="badge priority-badge priority-{{ p|lower }}">{{ p }}</span>
+          <strong>{{ by_priority.get(p, 0) }}</strong>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="panel h-100">
+      <div class="panel-header"><h2>By Status</h2></div>
+      <ul class="stage-list">
+        {% for s in statuses %}
+        <li>
+          <span class="badge task-status status-{{ s|lower|replace(' ', '-') }}">{{ s }}</span>
+          <strong>{{ by_status.get(s, 0) }}</strong>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <h2>My Open Tasks</h2>
+        <a href="{{ url_for('tasks.index', assigned=current_user.id, status='') }}">View</a>
+      </div>
+      {% if my_open %}
+      <ul class="simple-list">
+        {% for task in my_open %}
+        <li>
+          <a href="{{ url_for('tasks.detail', task_id=task.id) }}">{{ task.title }}</a>
+          <span class="badge priority-badge priority-{{ task.priority_slug }}">{{ task.priority }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty-state">No open tasks assigned to you.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Recently Created</h2>
+        <a href="{{ url_for('tasks.index') }}">All tasks</a>
+      </div>
+      {% if recent %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Assignee</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Due Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in recent %}
+            <tr>
+              <td><a href="{{ url_for('tasks.detail', task_id=task.id) }}">{{ task.title }}</a></td>
+              <td>{{ task.assigned_to.full_name if task.assigned_to else '—' }}</td>
+              <td><span class="badge priority-badge priority-{{ task.priority_slug }}">{{ task.priority }}</span></td>
+              <td><span class="badge task-status status-{{ task.status_slug }}">{{ task.status }}</span></td>
+              <td>
+                {% if task.due_date %}
+                  {{ task.due_date.strftime('%b %d, %Y') }}
+                  {% if task.is_overdue %}<span class="badge text-bg-danger ms-1">Overdue</span>{% endif %}
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state">No tasks yet. <a href="{{ url_for('tasks.create') }}">Create one</a>.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
