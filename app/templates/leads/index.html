@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('csv_io.export_leads') }}" class="btn btn-outline-secondary btn-sm">
+  <i class="bi bi-download"></i> Export CSV
+</a>
+<a href="{{ url_for('csv_io.index') }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-upload"></i> Import CSV
+</a>
+<a href="{{ url_for('leads.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-person-plus"></i> Add Lead
+</a>
+{% endblock %}
+
+{% block content %}
+<form class="filter-bar lead-filter-bar" method="GET">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search name, company, email, phone...">
+  </div>
+  <select name="status" class="form-select">
+    <option value="">All statuses</option>
+    {% for s in statuses %}
+    <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="source" class="form-select">
+    <option value="">All sources</option>
+    {% for s in sources %}
+    <option value="{{ s }}" {% if source == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="assigned" class="form-select">
+    <option value="">All employees</option>
+    <option value="unassigned" {% if assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
+    {% for emp in employees %}
+    <option value="{{ emp.id }}" {% if assigned == emp.id|string %}selected{% endif %}>{{ emp.full_name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Filter</button>
+  {% if q or status or source or assigned %}
+  <a href="{{ url_for('leads.index') }}" class="btn btn-link">Clear</a>
+  {% endif %}
+</form>
+
+<div class="panel">
+  {% if leads %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Lead Name</th>
+          <th>Company</th>
+          <th>Email / Phone</th>
+          <th>Source</th>
+          <th>Status</th>
+          <th>Assigned</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lead in leads %}
+        <tr>
+          <td>
+            <a href="{{ url_for('leads.detail', lead_id=lead.id) }}" class="fw-semibold">{{ lead.name }}</a>
+            {% if lead.country %}<div class="text-muted small">{{ lead.country }}{% if lead.industry %} · {{ lead.industry }}{% endif %}</div>{% endif %}
+          </td>
+          <td>{{ lead.company or '—' }}</td>
+          <td>
+            <div>{{ lead.email or '—' }}</div>
+            <div class="text-muted small">{{ lead.phone or '' }}</div>
+          </td>
+          <td>{{ lead.lead_source }}</td>
+          <td>
+            <span class="badge lead-status status-{{ lead.status|lower }}">{{ lead.status }}</span>
+          </td>
+          <td>
+            {% if lead.assigned_employee %}
+              {{ lead.assigned_employee.full_name }}
+            {% else %}
+              <span class="text-muted">Unassigned</span>
+            {% endif %}
+          </td>
+          <td class="text-end table-actions">
+            {% if not lead.is_converted %}
+            <a href="{{ url_for('customers.convert_from_lead', lead_id=lead.id) }}" class="btn btn-sm btn-outline-success" title="Convert to Customer">
+              <i class="bi bi-arrow-left-right"></i>
+            </a>
+            {% endif %}
+            <a href="{{ url_for('leads.edit', lead_id=lead.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              title="Delete"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteLeadModal"
+              data-delete-url="{{ url_for('leads.delete', lead_id=lead.id) }}"
+              data-lead-name="{{ lead.name }}"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <nav class="mt-3" aria-label="Leads pagination">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('leads.index', page=pagination.prev_num, q=q, status=status, source=source, assigned=assigned) if pagination.has_prev else '#' }}">Previous</a>
+      </li>
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('leads.index', page=p, q=q, status=status, source=source, assigned=assigned) }}">{{ p }}</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('leads.index', page=pagination.next_num, q=q, status=status, source=source, assigned=assigned) if pagination.has_next else '#' }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  <p class="text-center text-muted small mt-2 mb-0">
+    Showing {{ pagination.items|length }} of {{ pagination.total }} leads
+  </p>
+  {% endif %}
+
+  {% else %}
+  <p class="empty-state">No leads found. <a href="{{ url_for('leads.create') }}">Add your first lead</a>.</p>
+  {% endif %}
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteLeadModal" tabindex="-1" aria-labelledby="deleteLeadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="deleteLeadModalLabel">Delete lead?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete <strong id="deleteLeadName"></strong>? This action cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" id="deleteLeadForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Delete Lead</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const modal = document.getElementById("deleteLeadModal");
+    if (!modal) return;
+    modal.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+      const url = button.getAttribute("data-delete-url");
+      const name = button.getAttribute("data-lead-name");
+      document.getElementById("deleteLeadForm").setAttribute("action", url);
+      document.getElementById("deleteLeadName").textContent = name;
+    });
+  })();
+</script>
+{% endblock %}

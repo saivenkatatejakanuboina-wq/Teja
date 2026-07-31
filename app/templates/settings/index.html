@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Manage company, email, theme, backups, and your account.</p>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-3">
+    <div class="panel settings-nav-panel p-2">
+      <div class="list-group list-group-flush settings-nav">
+        <a class="list-group-item list-group-item-action {% if active_tab == 'company' %}active{% endif %}" href="{{ url_for('settings.index', tab='company') }}">
+          <i class="bi bi-building me-2"></i> Company
+        </a>
+        <a class="list-group-item list-group-item-action {% if active_tab == 'smtp' %}active{% endif %}" href="{{ url_for('settings.index', tab='smtp') }}">
+          <i class="bi bi-envelope-at me-2"></i> SMTP
+        </a>
+        <a class="list-group-item list-group-item-action {% if active_tab == 'theme' %}active{% endif %}" href="{{ url_for('settings.index', tab='theme') }}">
+          <i class="bi bi-palette me-2"></i> Theme
+        </a>
+        {% if current_user.is_admin %}
+        <a class="list-group-item list-group-item-action {% if active_tab == 'backup' %}active{% endif %}" href="{{ url_for('settings.index', tab='backup') }}">
+          <i class="bi bi-database me-2"></i> Backup & Restore
+        </a>
+        {% endif %}
+        <a class="list-group-item list-group-item-action {% if active_tab == 'profile' %}active{% endif %}" href="{{ url_for('settings.index', tab='profile') }}">
+          <i class="bi bi-person me-2"></i> Profile
+        </a>
+        <a class="list-group-item list-group-item-action {% if active_tab == 'password' %}active{% endif %}" href="{{ url_for('settings.index', tab='password') }}">
+          <i class="bi bi-shield-lock me-2"></i> Password
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-9">
+    {% if active_tab == 'company' %}
+    <div class="panel">
+      <div class="panel-header"><h2>Company Settings</h2></div>
+      {% if current_user.is_admin %}
+      <form method="POST" action="{{ url_for('settings.save_company') }}" enctype="multipart/form-data" novalidate>
+        {{ company_form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-md-8">
+            {{ company_form.company_name.label(class='form-label') }}
+            {{ company_form.company_name(class='form-control') }}
+          </div>
+          <div class="col-md-4">
+            {{ company_form.currency.label(class='form-label') }}
+            {{ company_form.currency(class='form-select') }}
+          </div>
+          <div class="col-md-6">
+            {{ company_form.timezone.label(class='form-label') }}
+            {{ company_form.timezone(class='form-select') }}
+          </div>
+          <div class="col-md-6">
+            {{ company_form.logo.label(class='form-label') }}
+            {{ company_form.logo(class='form-control') }}
+            {% if settings.logo_filename %}
+            <div class="mt-2 d-flex align-items-center gap-2">
+              <img src="{{ url_for('static', filename='uploads/' + settings.logo_filename) }}" alt="Logo" class="settings-logo-preview">
+              <span class="small text-muted">Current logo</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="form-actions">
+          {{ company_form.submit(class='btn btn-primary') }}
+        </div>
+      </form>
+      {% else %}
+      <p class="mb-0 text-muted">Only administrators can edit company settings.</p>
+      <dl class="detail-grid mt-3">
+        <div><dt>Company</dt><dd>{{ settings.company_name }}</dd></div>
+        <div><dt>Timezone</dt><dd>{{ settings.timezone }}</dd></div>
+        <div><dt>Currency</dt><dd>{{ settings.currency }}</dd></div>
+      </dl>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if active_tab == 'smtp' %}
+    <div class="panel">
+      <div class="panel-header"><h2>SMTP Settings</h2></div>
+      {% if current_user.is_admin %}
+      <form method="POST" action="{{ url_for('settings.save_smtp') }}" novalidate>
+        {{ smtp_form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-md-8">
+            {{ smtp_form.smtp_host.label(class='form-label') }}
+            {{ smtp_form.smtp_host(class='form-control', placeholder='smtp.example.com') }}
+          </div>
+          <div class="col-md-4">
+            {{ smtp_form.smtp_port.label(class='form-label') }}
+            {{ smtp_form.smtp_port(class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            {{ smtp_form.smtp_username.label(class='form-label') }}
+            {{ smtp_form.smtp_username(class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            {{ smtp_form.smtp_password.label(class='form-label') }}
+            {{ smtp_form.smtp_password(class='form-control', placeholder='Leave blank to keep current') }}
+          </div>
+          <div class="col-md-8">
+            {{ smtp_form.smtp_from_email.label(class='form-label') }}
+            {{ smtp_form.smtp_from_email(class='form-control', placeholder='noreply@company.com') }}
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check mb-2">
+              {{ smtp_form.smtp_use_tls(class='form-check-input') }}
+              {{ smtp_form.smtp_use_tls.label(class='form-check-label') }}
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          {{ smtp_form.submit(class='btn btn-primary') }}
+        </div>
+      </form>
+      {% else %}
+      <p class="mb-0 text-muted">Only administrators can manage SMTP settings.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if active_tab == 'theme' %}
+    <div class="panel">
+      <div class="panel-header"><h2>Theme Settings</h2></div>
+      {% if current_user.is_admin %}
+      <form method="POST" action="{{ url_for('settings.save_theme') }}" novalidate>
+        {{ theme_form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-md-6">
+            {{ theme_form.theme.label(class='form-label') }}
+            {{ theme_form.theme(class='form-select') }}
+            <div class="form-text">Applies across the CRM interface for all users.</div>
+          </div>
+          <div class="col-md-6">
+            <div class="theme-preview-cards">
+              <div class="theme-preview light">Light</div>
+              <div class="theme-preview dark">Dark</div>
+              <div class="theme-preview ocean">Ocean</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          {{ theme_form.submit(class='btn btn-primary') }}
+        </div>
+      </form>
+      {% else %}
+      <p class="mb-0">Current theme: <strong>{{ settings.theme|title }}</strong></p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if active_tab == 'backup' and current_user.is_admin %}
+    <div class="panel mb-4">
+      <div class="panel-header"><h2>Database Backup</h2></div>
+      <p class="text-muted">Create a downloadable SQLite backup of the CRM database.</p>
+      <form method="POST" action="{{ url_for('settings.backup_database') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-cloud-arrow-down"></i> Create Backup
+        </button>
+      </form>
+
+      {% if backups %}
+      <div class="table-responsive mt-4">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Size</th>
+              <th>Created (UTC)</th>
+              <th class="text-end">Download</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for backup in backups %}
+            <tr>
+              <td>{{ backup.name }}</td>
+              <td>{{ backup.size_kb }} KB</td>
+              <td>{{ backup.modified.strftime('%b %d, %Y %H:%M') }}</td>
+              <td class="text-end">
+                <a class="btn btn-sm btn-outline-primary" href="{{ url_for('settings.download_backup', filename=backup.name) }}">
+                  <i class="bi bi-download"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state mt-3">No backups yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><h2>Restore Database</h2></div>
+      <div class="alert alert-warning">
+        Restoring replaces the current database. A safety copy is saved automatically before restore.
+      </div>
+      <form method="POST" action="{{ url_for('settings.restore_database') }}" enctype="multipart/form-data" novalidate>
+        {{ restore_form.hidden_tag() }}
+        <div class="mb-3">
+          {{ restore_form.backup_file.label(class='form-label') }}
+          {{ restore_form.backup_file(class='form-control') }}
+        </div>
+        {{ restore_form.submit(class='btn btn-danger') }}
+      </form>
+    </div>
+    {% endif %}
+
+    {% if active_tab == 'profile' %}
+    <div class="panel">
+      <div class="panel-header"><h2>Profile Update</h2></div>
+      <form method="POST" action="{{ url_for('settings.save_profile') }}" novalidate>
+        {{ profile_form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-md-6">
+            {{ profile_form.full_name.label(class='form-label') }}
+            {{ profile_form.full_name(class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            {{ profile_form.username.label(class='form-label') }}
+            {{ profile_form.username(class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            {{ profile_form.email.label(class='form-label') }}
+            {{ profile_form.email(class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Role</label>
+            <input class="form-control" value="{{ current_user.role_label }}" disabled>
+          </div>
+        </div>
+        <div class="form-actions">
+          {{ profile_form.submit(class='btn btn-primary') }}
+        </div>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if active_tab == 'password' %}
+    <div class="panel">
+      <div class="panel-header"><h2>Change Password</h2></div>
+      <form method="POST" action="{{ url_for('settings.change_password') }}" novalidate>
+        {{ password_form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-md-6">
+            {{ password_form.current_password.label(class='form-label') }}
+            {{ password_form.current_password(class='form-control') }}
+          </div>
+          <div class="col-md-6"></div>
+          <div class="col-md-6">
+            {{ password_form.new_password.label(class='form-label') }}
+            {{ password_form.new_password(class='form-control') }}
+          </div>
+          <div class="col-md-6">
+            {{ password_form.confirm_password.label(class='form-label') }}
+            {{ password_form.confirm_password(class='form-control') }}
+          </div>
+        </div>
+        <div class="form-actions">
+          {{ password_form.submit(class='btn btn-primary') }}
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

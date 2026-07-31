@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Default permissions for Admin, Manager, and Employee roles.</p>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-3">
+    {% include 'includes/admin_nav.html' %}
+  </div>
+  <div class="col-lg-9">
+    <div class="row g-4">
+      {% for role in roles %}
+      <div class="col-md-4">
+        <div class="panel h-100">
+          <div class="panel-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">{{ role|title }}</h2>
+            <span class="badge text-bg-secondary">{{ counts[role] }} users</span>
+          </div>
+          <ul class="list-group list-group-flush">
+            {% set defaults = role_permissions.get(role, []) %}
+            {% for key, label in permission_catalog %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>{{ label }}</span>
+              {% if key in defaults or role == 'admin' %}
+              <i class="bi bi-check-circle-fill text-success"></i>
+              {% else %}
+              <i class="bi bi-x-circle text-muted"></i>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          <div class="p-3">
+            <a href="{{ url_for('admin.users', role=role) }}" class="btn btn-sm btn-outline-primary">View users</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="panel mt-4">
+      <div class="panel-header"><h2>Permission Catalog</h2></div>
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Label</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, label in permission_catalog %}
+            <tr>
+              <td><code>{{ key }}</code></td>
+              <td>{{ label }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
