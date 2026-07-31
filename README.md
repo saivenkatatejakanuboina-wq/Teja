@@ -36,6 +36,10 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Reminder date & time, status, remarks
   - Today's / Upcoming / Missed buckets
   - Bootstrap month calendar view
+- **Task Management**
+  - Create tasks, assign employees, priority & status
+  - Due date / completed date
+  - Search, filters, task dashboard, color badges
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -76,6 +80,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── leads.py       # Lead Management
     │   ├── customers.py   # Customer Management
     │   ├── followups.py   # Follow-up Management
+    │   ├── tasks.py       # Task Management
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
@@ -179,6 +184,7 @@ Override the default admin via `.env` (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_P
 | Leads      | `/leads`      | Lead management with search, filters, activity   |
 | Customers  | `/customers`  | Customers + convert from leads                   |
 | Follow-ups | `/followups`  | Schedule reminders + calendar                    |
+| Tasks      | `/tasks`      | Task list + `/tasks/dashboard`                   |
 | Contacts   | `/contacts`   | People linked to companies                       |
 | Companies  | `/companies`  | Organizations you work with                       |
 | Deals      | `/deals`      | Sales opportunities with stages & values         |

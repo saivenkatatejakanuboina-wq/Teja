@@ -55,6 +55,21 @@ FOLLOWUP_STATUSES = (
     "Cancelled",
 )
 
+TASK_PRIORITIES = (
+    "Low",
+    "Medium",
+    "High",
+    "Urgent",
+)
+
+TASK_STATUSES = (
+    "To Do",
+    "In Progress",
+    "Completed",
+    "On Hold",
+    "Cancelled",
+)
+
 
 class User(UserMixin, db.Model):
     """Authenticated user with Admin or Employee role."""
@@ -86,6 +101,18 @@ class User(UserMixin, db.Model):
         "FollowUp",
         back_populates="created_by",
         foreign_keys="FollowUp.created_by_id",
+        lazy="dynamic",
+    )
+    assigned_tasks = db.relationship(
+        "Task",
+        back_populates="assigned_to",
+        foreign_keys="Task.assigned_to_id",
+        lazy="dynamic",
+    )
+    created_tasks = db.relationship(
+        "Task",
+        back_populates="created_by",
+        foreign_keys="Task.created_by_id",
         lazy="dynamic",
     )
     created_leads = db.relationship(
@@ -390,6 +417,61 @@ class FollowUp(db.Model):
 
     def __repr__(self) -> str:
         return f"<FollowUp {self.title}>"
+
+
+class Task(db.Model):
+    """Assignable work item with priority, status, and due dates."""
+
+    __tablename__ = "tasks"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False, index=True)
+    description = db.Column(db.Text)
+    priority = db.Column(db.String(20), default="Medium", nullable=False, index=True)
+    status = db.Column(db.String(40), default="To Do", nullable=False, index=True)
+    due_date = db.Column(db.Date, index=True)
+    completed_date = db.Column(db.Date)
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    assigned_to = db.relationship(
+        "User",
+        foreign_keys=[assigned_to_id],
+        back_populates="assigned_tasks",
+    )
+    created_by = db.relationship(
+        "User",
+        foreign_keys=[created_by_id],
+        back_populates="created_tasks",
+    )
+
+    @property
+    def is_overdue(self) -> bool:
+        if self.status in ("Completed", "Cancelled") or self.due_date is None:
+            return False
+        from datetime import date
+
+        return self.due_date < date.today()
+
+    @property
+    def priority_slug(self) -> str:
+        return self.priority.lower().replace(" ", "-")
+
+    @property
+    def status_slug(self) -> str:
+        return self.status.lower().replace(" ", "-")
+
+    def __repr__(self) -> str:
+        return f"<Task {self.title}>"
 
 
 class ActivityLog(db.Model):

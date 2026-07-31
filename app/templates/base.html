@@ -36,6 +36,9 @@
         <a href="{{ url_for('followups.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('followups.') %}active{% endif %}">
           <i class="bi bi-alarm"></i> <span>Follow-ups</span>
         </a>
+        <a href="{{ url_for('tasks.dashboard') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('tasks.') %}active{% endif %}">
+          <i class="bi bi-check2-square"></i> <span>Tasks</span>
+        </a>
         <a href="{{ url_for('contacts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
           <i class="bi bi-people"></i> <span>Contacts</span>
         </a>
@@ -54,6 +57,9 @@
         </a>
         <a href="{{ url_for('followups.create') }}" class="nav-link">
           <i class="bi bi-alarm"></i> <span>Schedule Follow-up</span>
+        </a>
+        <a href="{{ url_for('tasks.create') }}" class="nav-link">
+          <i class="bi bi-plus-square"></i> <span>Create Task</span>
         </a>
       </nav>
 

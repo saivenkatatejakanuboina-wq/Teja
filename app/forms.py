@@ -29,6 +29,8 @@ from app.models import (
     FOLLOWUP_TYPES,
     LEAD_SOURCES,
     LEAD_STATUSES,
+    TASK_PRIORITIES,
+    TASK_STATUSES,
     User,
 )
 
@@ -265,3 +267,42 @@ class FollowUpForm(FlaskForm):
     customer_id = SelectField("Related Customer", coerce=int, validators=[Optional()])
     remarks = TextAreaField("Remarks", validators=[Optional(), Length(max=5000)])
     submit = SubmitField("Save Follow-up")
+
+
+class TaskForm(FlaskForm):
+    title = StringField(
+        "Task Title",
+        validators=[
+            DataRequired(message="Task title is required."),
+            Length(max=150),
+        ],
+    )
+    description = TextAreaField("Description", validators=[Optional(), Length(max=5000)])
+    assigned_to_id = SelectField(
+        "Assign Employee",
+        coerce=int,
+        validators=[DataRequired(message="Please assign an employee.")],
+    )
+    priority = SelectField(
+        "Priority",
+        choices=[(p, p) for p in TASK_PRIORITIES],
+        validators=[DataRequired()],
+        default="Medium",
+    )
+    status = SelectField(
+        "Status",
+        choices=[(s, s) for s in TASK_STATUSES],
+        validators=[DataRequired()],
+        default="To Do",
+    )
+    due_date = DateField(
+        "Due Date",
+        validators=[Optional()],
+        format="%Y-%m-%d",
+    )
+    completed_date = DateField(
+        "Completed Date",
+        validators=[Optional()],
+        format="%Y-%m-%d",
+    )
+    submit = SubmitField("Save Task")

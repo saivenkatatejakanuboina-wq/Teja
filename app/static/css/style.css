@@ -753,6 +753,38 @@ a:hover {
 .legend-dot.missed { background: #dc3545; }
 .legend-dot.cancelled { background: #94a3b8; }
 
+/* ===== Tasks ===== */
+.task-kpi-grid {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.priority-badge {
+  font-weight: 600;
+}
+
+.priority-badge.priority-low { background: #eef2f6; color: #475569; }
+.priority-badge.priority-medium { background: #e8f0fe; color: #1d6ef5; }
+.priority-badge.priority-high { background: #fff4e5; color: #b45309; }
+.priority-badge.priority-urgent { background: #fde8e8; color: #b91c1c; }
+
+.task-status.status-to-do { background: #e8f0fe; color: #1d6ef5; }
+.task-status.status-in-progress { background: #fff4e5; color: #b45309; }
+.task-status.status-completed { background: #eaf7ef; color: #15803d; }
+.task-status.status-on-hold { background: #f3e8ff; color: #7c3aed; }
+.task-status.status-cancelled { background: #eef2f6; color: #475569; }
+
+@media (max-width: 1399.98px) {
+  .task-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .task-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 991.98px) {
   .calendar-day {
     min-height: 84px;
