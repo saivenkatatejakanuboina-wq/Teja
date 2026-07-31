@@ -567,6 +567,23 @@ a:hover {
 .stage-closed-won { background: #eaf7ef; color: #15803d; }
 .stage-closed-lost { background: #fde8e8; color: #b91c1c; }
 
+.lead-status {
+  font-weight: 500;
+}
+
+.lead-status.status-new { background: #e8f0fe; color: #1d6ef5; }
+.lead-status.status-contacted { background: #e0f2fe; color: #0369a1; }
+.lead-status.status-qualified { background: #ede9fe; color: #6d28d9; }
+.lead-status.status-proposal { background: #fff4e5; color: #b45309; }
+.lead-status.status-negotiation { background: #f3e8ff; color: #7c3aed; }
+.lead-status.status-won { background: #eaf7ef; color: #15803d; }
+.lead-status.status-lost { background: #fde8e8; color: #b91c1c; }
+
+.lead-filter-bar .form-select {
+  max-width: 180px;
+  min-width: 140px;
+}
+
 /* ===== Auth ===== */
 .auth-wrapper {
   min-height: 100vh;

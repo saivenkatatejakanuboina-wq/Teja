@@ -20,6 +20,12 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Responsive Bootstrap layout
   - Chart.js charts (lead trend, outcomes, pipeline, revenue)
   - Recent activities feed (demo data)
+- **Lead Management**
+  - Fields: name, company, email, phone, country, industry, source, status, assigned employee, notes
+  - Add / Edit / Delete with confirmation modal
+  - Search, filter, pagination
+  - Form validation + activity log on every action
+  - Responsive Bootstrap table
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -57,9 +63,12 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     ├── blueprints/        # Controllers (MVC)
     │   ├── auth.py        # Auth blueprint
     │   ├── dashboard.py
+    │   ├── leads.py       # Lead Management
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
+    ├── services/
+    │   └── activity.py    # Activity log helper
     ├── templates/         # Views (MVC)
     │   └── auth/
     │       ├── login.html
@@ -154,7 +163,8 @@ Override the default admin via `.env` (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_P
 
 | Module     | Path          | Description                                      |
 |------------|---------------|--------------------------------------------------|
-| Dashboard  | `/`           | Stats, recent deals & contacts, pipeline stages  |
+| Dashboard  | `/`           | Stats, charts, recent activities                 |
+| Leads      | `/leads`      | Lead management with search, filters, activity   |
 | Contacts   | `/contacts`   | People linked to companies                       |
 | Companies  | `/companies`  | Organizations you work with                       |
 | Deals      | `/deals`      | Sales opportunities with stages & values         |

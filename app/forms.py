@@ -22,7 +22,7 @@ from wtforms.validators import (
     ValidationError,
 )
 
-from app.models import DEAL_STAGES, User
+from app.models import DEAL_STAGES, LEAD_SOURCES, LEAD_STATUSES, User
 
 CONTACT_STATUSES = [
     ("Lead", "Lead"),
@@ -133,3 +133,42 @@ class DealForm(FlaskForm):
     contact_id = SelectField("Contact", coerce=int, validators=[Optional()])
     notes = TextAreaField("Notes", validators=[Optional(), Length(max=2000)])
     submit = SubmitField("Save Deal")
+
+
+class LeadForm(FlaskForm):
+    name = StringField(
+        "Lead Name",
+        validators=[
+            DataRequired(message="Lead name is required."),
+            Length(max=150),
+        ],
+    )
+    company = StringField("Company", validators=[Optional(), Length(max=150)])
+    email = StringField(
+        "Email",
+        validators=[
+            Optional(),
+            Email(message="Enter a valid email address."),
+            Length(max=120),
+        ],
+    )
+    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    country = StringField("Country", validators=[Optional(), Length(max=100)])
+    industry = StringField("Industry", validators=[Optional(), Length(max=100)])
+    lead_source = SelectField(
+        "Lead Source",
+        choices=[(s, s) for s in LEAD_SOURCES],
+        validators=[DataRequired(message="Lead source is required.")],
+    )
+    status = SelectField(
+        "Status",
+        choices=[(s, s) for s in LEAD_STATUSES],
+        validators=[DataRequired(message="Status is required.")],
+    )
+    assigned_to_id = SelectField(
+        "Assigned Employee",
+        coerce=int,
+        validators=[Optional()],
+    )
+    notes = TextAreaField("Notes", validators=[Optional(), Length(max=5000)])
+    submit = SubmitField("Save Lead")

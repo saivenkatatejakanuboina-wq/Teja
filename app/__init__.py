@@ -20,6 +20,7 @@ def create_app(config_name: str | None = None) -> Flask:
     _register_error_handlers(app)
     _create_database(app)
     _seed_default_admin(app)
+    _seed_sample_employee(app)
 
     return app
 
@@ -43,9 +44,11 @@ def _register_blueprints(app: Flask) -> None:
     from app.blueprints.contacts import contacts_bp
     from app.blueprints.dashboard import dashboard_bp
     from app.blueprints.deals import deals_bp
+    from app.blueprints.leads import leads_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(leads_bp, url_prefix="/leads")
     app.register_blueprint(companies_bp, url_prefix="/companies")
     app.register_blueprint(contacts_bp, url_prefix="/contacts")
     app.register_blueprint(deals_bp, url_prefix="/deals")
@@ -97,3 +100,22 @@ def _seed_default_admin(app: Flask) -> None:
         elif admin.role != ROLE_ADMIN:
             admin.role = ROLE_ADMIN
             db.session.commit()
+
+
+def _seed_sample_employee(app: Flask) -> None:
+    """Ensure a sample Employee account exists for lead assignment demos."""
+    from app.models import ROLE_EMPLOYEE, User
+
+    with app.app_context():
+        employee = User.query.filter_by(username="employee").first()
+        if employee is None:
+            employee = User(
+                username="employee",
+                email="employee@minicrm.local",
+                full_name="Alex Employee",
+                role=ROLE_EMPLOYEE,
+            )
+            employee.set_password("employee123")
+            db.session.add(employee)
+            db.session.commit()
+            app.logger.info("Sample employee account created: employee")

@@ -27,6 +27,9 @@
         <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
           <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
         </a>
+        <a href="{{ url_for('leads.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('leads.') %}active{% endif %}">
+          <i class="bi bi-funnel"></i> <span>Leads</span>
+        </a>
         <a href="{{ url_for('contacts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
           <i class="bi bi-people"></i> <span>Contacts</span>
         </a>
@@ -40,8 +43,8 @@
 
       <div class="sidebar-section-label">Shortcuts</div>
       <nav class="sidebar-nav">
-        <a href="{{ url_for('contacts.create') }}" class="nav-link">
-          <i class="bi bi-person-plus"></i> <span>New Contact</span>
+        <a href="{{ url_for('leads.create') }}" class="nav-link">
+          <i class="bi bi-person-plus"></i> <span>Add Lead</span>
         </a>
         <a href="{{ url_for('deals.create') }}" class="nav-link">
           <i class="bi bi-plus-circle"></i> <span>New Deal</span>

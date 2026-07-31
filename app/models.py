@@ -20,6 +20,27 @@ DEAL_STAGES = (
     "Closed Lost",
 )
 
+LEAD_STATUSES = (
+    "New",
+    "Contacted",
+    "Qualified",
+    "Proposal",
+    "Negotiation",
+    "Won",
+    "Lost",
+)
+
+LEAD_SOURCES = (
+    "Website",
+    "Referral",
+    "Cold Call",
+    "Social Media",
+    "Email Campaign",
+    "Trade Show",
+    "Advertisement",
+    "Other",
+)
+
 
 class User(UserMixin, db.Model):
     """Authenticated user with Admin or Employee role."""
@@ -40,6 +61,19 @@ class User(UserMixin, db.Model):
     contacts = db.relationship("Contact", back_populates="owner", lazy="dynamic")
     companies = db.relationship("Company", back_populates="owner", lazy="dynamic")
     deals = db.relationship("Deal", back_populates="owner", lazy="dynamic")
+    created_leads = db.relationship(
+        "Lead",
+        back_populates="created_by",
+        foreign_keys="Lead.created_by_id",
+        lazy="dynamic",
+    )
+    assigned_leads = db.relationship(
+        "Lead",
+        back_populates="assigned_employee",
+        foreign_keys="Lead.assigned_to_id",
+        lazy="dynamic",
+    )
+    activities = db.relationship("ActivityLog", back_populates="user", lazy="dynamic")
 
     def set_password(self, password: str) -> None:
         """Hash and store the user's password."""
@@ -165,3 +199,75 @@ class Deal(db.Model):
 
     def __repr__(self) -> str:
         return f"<Deal {self.title}>"
+
+
+class Lead(db.Model):
+    """Sales lead record for the Lead Management module."""
+
+    __tablename__ = "leads"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False, index=True)
+    company = db.Column(db.String(150), index=True)
+    email = db.Column(db.String(120), index=True)
+    phone = db.Column(db.String(40))
+    country = db.Column(db.String(100))
+    industry = db.Column(db.String(100))
+    lead_source = db.Column(db.String(60), default="Website", nullable=False)
+    status = db.Column(db.String(40), default="New", nullable=False, index=True)
+    notes = db.Column(db.Text)
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    assigned_employee = db.relationship(
+        "User",
+        foreign_keys=[assigned_to_id],
+        back_populates="assigned_leads",
+    )
+    created_by = db.relationship(
+        "User",
+        foreign_keys=[created_by_id],
+        back_populates="created_leads",
+    )
+    activities = db.relationship(
+        "ActivityLog",
+        back_populates="lead",
+        lazy="dynamic",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Lead {self.name}>"
+
+
+class ActivityLog(db.Model):
+    """Audit trail for lead (and related) actions."""
+
+    __tablename__ = "activity_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    action = db.Column(db.String(40), nullable=False, index=True)
+    entity_type = db.Column(db.String(40), default="lead", nullable=False)
+    entity_id = db.Column(db.Integer)
+    message = db.Column(db.String(500), nullable=False)
+    details = db.Column(db.Text)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id", ondelete="CASCADE"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True
+    )
+
+    lead = db.relationship("Lead", back_populates="activities")
+    user = db.relationship("User", back_populates="activities")
+
+    def __repr__(self) -> str:
+        return f"<ActivityLog {self.action} #{self.id}>"
