@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('customers.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-person-badge"></i> Add Customer
+</a>
+{% endblock %}
+
+{% block content %}
+<form class="filter-bar" method="GET">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search name, contact, GST, industry...">
+  </div>
+  <select name="status" class="form-select">
+    <option value="">All statuses</option>
+    <option value="Active" {% if status == 'Active' %}selected{% endif %}>Active</option>
+    <option value="Inactive" {% if status == 'Inactive' %}selected{% endif %}>Inactive</option>
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Search</button>
+  {% if q or status %}
+  <a href="{{ url_for('customers.index') }}" class="btn btn-link">Clear</a>
+  {% endif %}
+</form>
+
+<div class="panel">
+  {% if customers %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Primary Contact</th>
+          <th>Industry</th>
+          <th>GST</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for customer in customers %}
+        <tr>
+          <td>
+            <a href="{{ url_for('customers.detail', customer_id=customer.id) }}" class="fw-semibold">{{ customer.name }}</a>
+            {% if customer.website %}
+            <div class="text-muted small">{{ customer.website }}</div>
+            {% elif customer.email %}
+            <div class="text-muted small">{{ customer.email }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {{ customer.primary_contact or '—' }}
+            {% if customer.phone %}<div class="text-muted small">{{ customer.phone }}</div>{% endif %}
+          </td>
+          <td>{{ customer.industry or '—' }}</td>
+          <td>{{ customer.gst or '—' }}</td>
+          <td>
+            <span class="badge {% if customer.status == 'Active' %}text-bg-success{% else %}text-bg-secondary{% endif %}">
+              {{ customer.status }}
+            </span>
+            {% if customer.source_lead %}
+            <div class="small text-muted mt-1">From lead</div>
+            {% endif %}
+          </td>
+          <td class="text-end table-actions">
+            <a href="{{ url_for('customers.edit', customer_id=customer.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              title="Delete"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteCustomerModal"
+              data-delete-url="{{ url_for('customers.delete', customer_id=customer.id) }}"
+              data-customer-name="{{ customer.name }}"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <nav class="mt-3" aria-label="Customers pagination">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('customers.index', page=pagination.prev_num, q=q, status=status) if pagination.has_prev else '#' }}">Previous</a>
+      </li>
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('customers.index', page=p, q=q, status=status) }}">{{ p }}</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('customers.index', page=pagination.next_num, q=q, status=status) if pagination.has_next else '#' }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  <p class="text-center text-muted small mt-2 mb-0">
+    Showing {{ pagination.items|length }} of {{ pagination.total }} customers
+  </p>
+  {% endif %}
+
+  {% else %}
+  <p class="empty-state">
+    No customers found.
+    <a href="{{ url_for('customers.create') }}">Add a customer</a>
+    or <a href="{{ url_for('leads.index') }}">convert a lead</a>.
+  </p>
+  {% endif %}
+</div>
+
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Delete customer?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete <strong id="deleteCustomerName"></strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" id="deleteCustomerForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Delete Customer</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const modal = document.getElementById("deleteCustomerModal");
+    if (!modal) return;
+    modal.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+      document.getElementById("deleteCustomerForm").setAttribute("action", button.getAttribute("data-delete-url"));
+      document.getElementById("deleteCustomerName").textContent = button.getAttribute("data-customer-name");
+    });
+  })();
+</script>
+{% endblock %}

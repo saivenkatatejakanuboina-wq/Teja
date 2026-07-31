@@ -1,8 +1,12 @@
 {% extends 'base.html' %}
 
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Welcome back, {{ user.full_name.split()[0] }} — here’s your sales overview.</p>
+{% endblock %}
+
 {% block topbar_actions %}
 <a href="{{ url_for('contacts.create') }}" class="btn btn-primary btn-sm">
-  <i class="bi bi-person-plus"></i> New Contact
+  <i class="bi bi-person-plus"></i> New Lead
 </a>
 <a href="{{ url_for('deals.create') }}" class="btn btn-outline-primary btn-sm">
   <i class="bi bi-plus-lg"></i> New Deal
@@ -10,113 +14,190 @@
 {% endblock %}
 
 {% block content %}
-<div class="stat-grid">
-  <div class="stat-card">
-    <div class="stat-icon contacts"><i class="bi bi-people"></i></div>
-    <div>
-      <span class="stat-label">Contacts</span>
-      <strong class="stat-value">{{ total_contacts }}</strong>
+{% if is_dummy %}
+<div class="alert alert-soft mb-4" role="status">
+  <i class="bi bi-info-circle me-1"></i>
+  Showing <strong>demo dashboard data</strong> so you can preview the full CRM overview.
+</div>
+{% endif %}
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon leads"><i class="bi bi-funnel"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Total Leads</span>
+      <strong class="kpi-value">{{ cards.total_leads }}</strong>
+      <span class="kpi-meta up"><i class="bi bi-arrow-up-short"></i> 12% vs last week</span>
     </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon companies"><i class="bi bi-building"></i></div>
-    <div>
-      <span class="stat-label">Companies</span>
-      <strong class="stat-value">{{ total_companies }}</strong>
+  <div class="kpi-card">
+    <div class="kpi-icon today"><i class="bi bi-calendar-plus"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Today's Leads</span>
+      <strong class="kpi-value">{{ cards.todays_leads }}</strong>
+      <span class="kpi-meta">New inquiries today</span>
     </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon deals"><i class="bi bi-graph-up-arrow"></i></div>
-    <div>
-      <span class="stat-label">Open Pipeline</span>
-      <strong class="stat-value">${{ '%.0f'|format(pipeline_value) }}</strong>
+  <div class="kpi-card">
+    <div class="kpi-icon customers"><i class="bi bi-people-fill"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Customers</span>
+      <strong class="kpi-value">{{ cards.customers }}</strong>
+      <span class="kpi-meta up"><i class="bi bi-arrow-up-short"></i> 5 new this month</span>
     </div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon won"><i class="bi bi-trophy"></i></div>
-    <div>
-      <span class="stat-label">Won Revenue</span>
-      <strong class="stat-value">${{ '%.0f'|format(won_value) }}</strong>
+  <div class="kpi-card">
+    <div class="kpi-icon followups"><i class="bi bi-alarm"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Follow-ups Today</span>
+      <strong class="kpi-value">{{ cards.followups_today }}</strong>
+      <span class="kpi-meta warn">4 still pending</span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon won"><i class="bi bi-trophy"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Won Deals</span>
+      <strong class="kpi-value">{{ cards.won_deals }}</strong>
+      <span class="kpi-meta up"><i class="bi bi-arrow-up-short"></i> $71k this month</span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon lost"><i class="bi bi-x-octagon"></i></div>
+    <div class="kpi-body">
+      <span class="kpi-label">Lost Deals</span>
+      <strong class="kpi-value">{{ cards.lost_deals }}</strong>
+      <span class="kpi-meta">Review lost reasons</span>
     </div>
   </div>
 </div>
 
+<!-- Charts + Activities -->
 <div class="row g-4 mt-1">
-  <div class="col-lg-7">
-    <div class="panel">
+  <div class="col-xl-8">
+    <div class="panel h-100">
       <div class="panel-header">
-        <h2>Recent Deals</h2>
+        <div>
+          <h2>Lead Trend</h2>
+          <p class="panel-hint">Leads captured over the last 7 days</p>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="leadsChart" height="110"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <div>
+          <h2>Deal Outcomes</h2>
+          <p class="panel-hint">Won vs lost vs open</p>
+        </div>
+      </div>
+      <div class="chart-wrap chart-wrap-sm">
+        <canvas id="outcomesChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-6">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <div>
+          <h2>Pipeline by Stage</h2>
+          <p class="panel-hint">Deal count across stages</p>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="pipelineChart" height="140"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-6">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <div>
+          <h2>Revenue Overview</h2>
+          <p class="panel-hint">Won revenue vs open pipeline</p>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="revenueChart" height="140"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <h2>Recent Activities</h2>
+        <span class="badge text-bg-light">Live feed</span>
+      </div>
+      <ul class="activity-feed">
+        {% for item in recent_activities %}
+        <li>
+          <div class="activity-icon tone-{{ item.tone }}"><i class="bi {{ item.icon }}"></i></div>
+          <div class="activity-body">
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.detail }}</p>
+            <small>{{ item.time }}</small>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-xl-7">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <h2>Top Deals</h2>
         <a href="{{ url_for('deals.index') }}">View all</a>
       </div>
-      {% if recent_deals %}
       <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
           <thead>
             <tr>
               <th>Deal</th>
+              <th>Company</th>
               <th>Stage</th>
               <th class="text-end">Value</th>
             </tr>
           </thead>
           <tbody>
-            {% for deal in recent_deals %}
+            {% for deal in top_deals %}
             <tr>
+              <td class="fw-semibold">{{ deal.title }}</td>
+              <td>{{ deal.company }}</td>
               <td>
-                <a href="{{ url_for('deals.detail', deal_id=deal.id) }}">{{ deal.title }}</a>
-                {% if deal.company %}
-                <div class="text-muted small">{{ deal.company.name }}</div>
-                {% endif %}
+                <span class="badge stage-badge stage-{{ deal.stage|replace(' ', '-')|lower }}">
+                  {{ deal.stage }}
+                </span>
               </td>
-              <td><span class="badge stage-badge stage-{{ deal.stage|replace(' ', '-')|lower }}">{{ deal.stage }}</span></td>
-              <td class="text-end">${{ '%.2f'|format(deal.value) }}</td>
+              <td class="text-end">${{ '{:,.0f}'.format(deal.value) }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
-      {% else %}
-      <p class="empty-state">No deals yet. <a href="{{ url_for('deals.create') }}">Create your first deal</a>.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="col-lg-5">
-    <div class="panel mb-4">
-      <div class="panel-header">
-        <h2>Pipeline Stages</h2>
-      </div>
-      {% if stage_data %}
-      <ul class="stage-list">
-        {% for stage, count in stage_data.items() %}
-        <li>
-          <span>{{ stage }}</span>
-          <strong>{{ count }}</strong>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="empty-state">Pipeline is empty.</p>
-      {% endif %}
-    </div>
-
-    <div class="panel">
-      <div class="panel-header">
-        <h2>Recent Contacts</h2>
-        <a href="{{ url_for('contacts.index') }}">View all</a>
-      </div>
-      {% if recent_contacts %}
-      <ul class="simple-list">
-        {% for contact in recent_contacts %}
-        <li>
-          <a href="{{ url_for('contacts.detail', contact_id=contact.id) }}">{{ contact.full_name }}</a>
-          <span class="badge text-bg-light">{{ contact.status }}</span>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="empty-state">No contacts yet.</p>
-      {% endif %}
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  window.CRM_DASHBOARD = {
+    leadTrend: {{ lead_trend | tojson }},
+    dealOutcomes: {{ deal_outcomes | tojson }},
+    pipelineStages: {{ pipeline_stages | tojson }},
+    revenueTrend: {{ revenue_trend | tojson }}
+  };
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

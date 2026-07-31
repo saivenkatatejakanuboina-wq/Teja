@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('tasks.dashboard') }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-speedometer2"></i> Task Dashboard
+</a>
+<a href="{{ url_for('tasks.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg"></i> Create Task
+</a>
+{% endblock %}
+
+{% block content %}
+<form class="filter-bar" method="GET">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search tasks...">
+  </div>
+  <select name="status" class="form-select">
+    <option value="">All statuses</option>
+    {% for s in statuses %}
+    <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="priority" class="form-select">
+    <option value="">All priorities</option>
+    {% for p in priorities %}
+    <option value="{{ p }}" {% if priority == p %}selected{% endif %}>{{ p }}</option>
+    {% endfor %}
+  </select>
+  <select name="assigned" class="form-select">
+    <option value="">All employees</option>
+    {% for emp in employees %}
+    <option value="{{ emp.id }}" {% if assigned == emp.id|string %}selected{% endif %}>{{ emp.full_name }}</option>
+    {% endfor %}
+  </select>
+  <select name="due" class="form-select">
+    <option value="">Any due date</option>
+    <option value="today" {% if due == 'today' %}selected{% endif %}>Due today</option>
+    <option value="overdue" {% if due == 'overdue' %}selected{% endif %}>Overdue</option>
+    <option value="upcoming" {% if due == 'upcoming' %}selected{% endif %}>Upcoming</option>
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Filter</button>
+  {% if q or status or priority or assigned or due %}
+  <a href="{{ url_for('tasks.index') }}" class="btn btn-link">Clear</a>
+  {% endif %}
+</form>
+
+<div class="panel">
+  {% if tasks %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Assignee</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>Due Date</th>
+          <th>Completed</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>
+            <a href="{{ url_for('tasks.detail', task_id=task.id) }}" class="fw-semibold">{{ task.title }}</a>
+            {% if task.description %}
+            <div class="text-muted small text-truncate" style="max-width:260px;">{{ task.description }}</div>
+            {% endif %}
+          </td>
+          <td>{{ task.assigned_to.full_name if task.assigned_to else '—' }}</td>
+          <td><span class="badge priority-badge priority-{{ task.priority_slug }}">{{ task.priority }}</span></td>
+          <td><span class="badge task-status status-{{ task.status_slug }}">{{ task.status }}</span></td>
+          <td>
+            {% if task.due_date %}
+              {{ task.due_date.strftime('%b %d, %Y') }}
+              {% if task.is_overdue %}<div><span class="badge text-bg-danger">Overdue</span></div>{% endif %}
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ task.completed_date.strftime('%b %d, %Y') if task.completed_date else '—' }}</td>
+          <td class="text-end table-actions">
+            {% if task.status != 'Completed' %}
+            <form method="POST" action="{{ url_for('tasks.complete', task_id=task.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-success" title="Complete">
+                <i class="bi bi-check2"></i>
+              </button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('tasks.edit', task_id=task.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteTaskModal"
+              data-delete-url="{{ url_for('tasks.delete', task_id=task.id) }}"
+              data-task-title="{{ task.title }}"
+              title="Delete"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <nav class="mt-3" aria-label="Tasks pagination">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('tasks.index', page=pagination.prev_num, q=q, status=status, priority=priority, assigned=assigned, due=due) if pagination.has_prev else '#' }}">Previous</a>
+      </li>
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('tasks.index', page=p, q=q, status=status, priority=priority, assigned=assigned, due=due) }}">{{ p }}</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('tasks.index', page=pagination.next_num, q=q, status=status, priority=priority, assigned=assigned, due=due) if pagination.has_next else '#' }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <p class="empty-state">No tasks found. <a href="{{ url_for('tasks.create') }}">Create a task</a>.</p>
+  {% endif %}
+</div>
+
+<div class="modal fade" id="deleteTaskModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Delete task?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Delete <strong id="deleteTaskTitle"></strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" id="deleteTaskForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const modal = document.getElementById("deleteTaskModal");
+    if (!modal) return;
+    modal.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+      document.getElementById("deleteTaskForm").setAttribute("action", button.getAttribute("data-delete-url"));
+      document.getElementById("deleteTaskTitle").textContent = button.getAttribute("data-task-title");
+    });
+  })();
+</script>
+{% endblock %}

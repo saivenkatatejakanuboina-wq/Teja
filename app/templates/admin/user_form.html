@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">{% if user %}Update account details, role, and permissions.{% else %}Create a new CRM user account.{% endif %}</p>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-3">
+    {% include 'includes/admin_nav.html' %}
+  </div>
+  <div class="col-lg-9">
+    <div class="panel">
+      <div class="panel-header"><h2>{{ title }}</h2></div>
+      <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="row g-3">
+          <div class="col-md-6">
+            {{ form.full_name.label(class='form-label') }}
+            {{ form.full_name(class='form-control' + (' is-invalid' if form.full_name.errors else '')) }}
+            {% for error in form.full_name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            {{ form.username.label(class='form-label') }}
+            {{ form.username(class='form-control' + (' is-invalid' if form.username.errors else '')) }}
+            {% for error in form.username.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            {{ form.email.label(class='form-label') }}
+            {{ form.email(class='form-control' + (' is-invalid' if form.email.errors else '')) }}
+            {% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-3">
+            {{ form.role.label(class='form-label') }}
+            {{ form.role(class='form-select', id='roleSelect') }}
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check mb-2">
+              {{ form.is_active(class='form-check-input') }}
+              {{ form.is_active.label(class='form-check-label') }}
+            </div>
+          </div>
+          <div class="col-md-6">
+            {{ form.password.label(class='form-label') }}
+            {{ form.password(class='form-control' + (' is-invalid' if form.password.errors else ''), placeholder=('Required' if not user else 'Leave blank to keep current')) }}
+            {% for error in form.password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+          <div class="col-md-6">
+            {{ form.confirm_password.label(class='form-label') }}
+            {{ form.confirm_password(class='form-control' + (' is-invalid' if form.confirm_password.errors else '')) }}
+            {% for error in form.confirm_password.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <hr class="my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h3 class="h6 mb-1">Permissions</h3>
+            <p class="text-muted small mb-0">Admins always receive full access. Customize permissions for Manager and Employee roles.</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="applyRoleDefaults">Apply role defaults</button>
+        </div>
+        <div class="row g-2" id="permissionsGrid">
+          {% for subfield in form.permissions %}
+          <div class="col-md-6">
+            <div class="form-check">
+              {{ subfield(class='form-check-input perm-checkbox') }}
+              {{ subfield.label(class='form-check-label') }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          {{ form.submit(class='btn btn-primary') }}
+          <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const roleDefaults = {{ role_defaults|tojson }};
+  const roleSelect = document.getElementById('roleSelect');
+  const applyBtn = document.getElementById('applyRoleDefaults');
+
+  function applyDefaults(role) {
+    const selected = new Set(roleDefaults[role] || []);
+    document.querySelectorAll('.perm-checkbox').forEach((el) => {
+      el.checked = selected.has(el.value);
+    });
+  }
+
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => applyDefaults(roleSelect.value));
+  }
+</script>
+{% endblock %}
