@@ -3,41 +3,79 @@
 {% block auth_content %}
 <div class="auth-card">
   <div class="auth-brand">
-    <i class="bi bi-briefcase-fill"></i>
+    <i class="bi bi-person-plus-fill"></i>
     <h1>Mini CRM</h1>
-    <p>Create your account</p>
+    <p>Create an Employee account</p>
   </div>
-  <form method="POST" novalidate>
+
+  <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
     {{ form.hidden_tag() }}
+
     <div class="mb-3">
       {{ form.full_name.label(class='form-label') }}
-      {{ form.full_name(class='form-control' + (' is-invalid' if form.full_name.errors else '')) }}
-      {% for error in form.full_name.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      {{ form.full_name(
+          class='form-control' + (' is-invalid' if form.full_name.errors else ''),
+          placeholder='Your full name'
+      ) }}
+      {% for error in form.full_name.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
     </div>
+
     <div class="mb-3">
       {{ form.username.label(class='form-label') }}
-      {{ form.username(class='form-control' + (' is-invalid' if form.username.errors else '')) }}
-      {% for error in form.username.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      {{ form.username(
+          class='form-control' + (' is-invalid' if form.username.errors else ''),
+          placeholder='Choose a username'
+      ) }}
+      {% for error in form.username.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
     </div>
+
     <div class="mb-3">
       {{ form.email.label(class='form-label') }}
-      {{ form.email(class='form-control' + (' is-invalid' if form.email.errors else '')) }}
-      {% for error in form.email.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      {{ form.email(
+          class='form-control' + (' is-invalid' if form.email.errors else ''),
+          placeholder='you@company.com'
+      ) }}
+      {% for error in form.email.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
     </div>
+
     <div class="mb-3">
       {{ form.password.label(class='form-label') }}
-      {{ form.password(class='form-control' + (' is-invalid' if form.password.errors else '')) }}
-      {% for error in form.password.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      {{ form.password(
+          class='form-control' + (' is-invalid' if form.password.errors else ''),
+          placeholder='At least 6 characters'
+      ) }}
+      {% for error in form.password.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
     </div>
+
     <div class="mb-3">
       {{ form.confirm_password.label(class='form-label') }}
-      {{ form.confirm_password(class='form-control' + (' is-invalid' if form.confirm_password.errors else '')) }}
-      {% for error in form.confirm_password.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      {{ form.confirm_password(
+          class='form-control' + (' is-invalid' if form.confirm_password.errors else ''),
+          placeholder='Repeat password'
+      ) }}
+      {% for error in form.confirm_password.errors %}
+        <div class="invalid-feedback d-block">{{ error }}</div>
+      {% endfor %}
     </div>
+
+    <div class="alert alert-light border small mb-3">
+      New registrations create an <strong>Employee</strong> account.
+      Admin accounts are provisioned by the system.
+    </div>
+
     {{ form.submit(class='btn btn-primary w-100') }}
   </form>
+
   <p class="auth-footer">
-    Already registered?
+    Already have an account?
     <a href="{{ url_for('auth.login') }}">Sign in</a>
   </p>
 </div>

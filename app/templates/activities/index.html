@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Track logins, lead/customer/task changes, with date, time, IP, and user.</p>
+{% endblock %}
+
+{% block content %}
+<form class="filter-bar lead-filter-bar" method="GET">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search message, user, IP...">
+  </div>
+  <select name="action" class="form-select">
+    <option value="">All activities</option>
+    {% for key, label in action_filters %}
+    <option value="{{ key }}" {% if action == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <select name="user_id" class="form-select">
+    <option value="">All users</option>
+    {% for user in users %}
+    <option value="{{ user.id }}" {% if user_id == user.id %}selected{% endif %}>{{ user.full_name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Filter</button>
+  {% if q or action or user_id %}
+  <a href="{{ url_for('activities.index') }}" class="btn btn-link">Clear</a>
+  {% endif %}
+</form>
+
+<div class="panel">
+  {% if activities %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Activity</th>
+          <th>User</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>IP Address</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in activities %}
+        <tr>
+          <td>
+            <span class="badge
+              {% if item.action == 'login' %}text-bg-success
+              {% elif item.action == 'logout' %}text-bg-secondary
+              {% elif item.action == 'created' or item.action == 'completed' or item.action == 'converted' %}text-bg-primary
+              {% elif item.action == 'updated' %}text-bg-info
+              {% elif item.action == 'deleted' %}text-bg-danger
+              {% else %}text-bg-light text-dark{% endif %}
+            ">{{ item.action_label }}</span>
+            <div class="small text-muted mt-1">{{ item.message }}</div>
+          </td>
+          <td>
+            {% if item.user %}
+            <div class="fw-semibold">{{ item.user.full_name }}</div>
+            <div class="text-muted small">{{ item.user.username }}</div>
+            {% else %}
+            <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>{{ item.activity_date }}</td>
+          <td>{{ item.activity_time }}</td>
+          <td class="font-monospace small">{{ item.ip_address or '—' }}</td>
+          <td class="text-muted small">{{ item.details or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <nav class="mt-3" aria-label="Activity log pagination">
+    <ul class="pagination pagination-sm justify-content-center mb-0">
+      <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('activities.index', page=pagination.prev_num, q=q, action=action, user_id=user_id) if pagination.has_prev else '#' }}">Previous</a>
+      </li>
+      {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+        {% if p %}
+        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('activities.index', page=p, q=q, action=action, user_id=user_id) }}">{{ p }}</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        {% endif %}
+      {% endfor %}
+      <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('activities.index', page=pagination.next_num, q=q, action=action, user_id=user_id) if pagination.has_next else '#' }}">Next</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+  <p class="text-center text-muted small mt-2 mb-0">
+    Showing {{ pagination.items|length }} of {{ pagination.total }} activities
+  </p>
+  {% else %}
+  <p class="empty-state mb-0">No activities recorded yet. Sign in, create leads, customers, or tasks to start the log.</p>
+  {% endif %}
+</div>
+{% endblock %}

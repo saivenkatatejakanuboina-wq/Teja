@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+{% if task.status != 'Completed' %}
+<form method="POST" action="{{ url_for('tasks.complete', task_id=task.id) }}" class="d-inline">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn btn-success btn-sm">
+    <i class="bi bi-check2-circle"></i> Mark Completed
+  </button>
+</form>
+{% endif %}
+<a href="{{ url_for('tasks.edit', task_id=task.id) }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-pencil"></i> Edit
+</a>
+<button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteTaskModal">
+  <i class="bi bi-trash"></i> Delete
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="detail-header">
+    <div>
+      <h2>{{ task.title }}</h2>
+      <p class="text-muted mb-0">
+        Assigned to {{ task.assigned_to.full_name if task.assigned_to else '—' }}
+      </p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="badge priority-badge priority-{{ task.priority_slug }} fs-6">{{ task.priority }}</span>
+      <span class="badge task-status status-{{ task.status_slug }} fs-6">{{ task.status }}</span>
+      {% if task.is_overdue %}<span class="badge text-bg-danger fs-6">Overdue</span>{% endif %}
+    </div>
+  </div>
+
+  <dl class="detail-grid">
+    <div>
+      <dt>Assign Employee</dt>
+      <dd>{{ task.assigned_to.full_name if task.assigned_to else '—' }}</dd>
+    </div>
+    <div>
+      <dt>Created By</dt>
+      <dd>{{ task.created_by.full_name if task.created_by else '—' }}</dd>
+    </div>
+    <div>
+      <dt>Due Date</dt>
+      <dd>{{ task.due_date.strftime('%b %d, %Y') if task.due_date else '—' }}</dd>
+    </div>
+    <div>
+      <dt>Completed Date</dt>
+      <dd>{{ task.completed_date.strftime('%b %d, %Y') if task.completed_date else '—' }}</dd>
+    </div>
+    <div>
+      <dt>Created</dt>
+      <dd>{{ task.created_at.strftime('%b %d, %Y %H:%M') }} UTC</dd>
+    </div>
+    <div>
+      <dt>Updated</dt>
+      <dd>{{ task.updated_at.strftime('%b %d, %Y %H:%M') }} UTC</dd>
+    </div>
+  </dl>
+
+  {% if task.description %}
+  <div class="mt-3">
+    <h3 class="h6 text-uppercase text-muted">Description</h3>
+    <p class="mb-0" style="white-space: pre-wrap;">{{ task.description }}</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="modal fade" id="deleteTaskModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Delete task?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">Delete <strong>{{ task.title }}</strong>?</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" action="{{ url_for('tasks.delete', task_id=task.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
