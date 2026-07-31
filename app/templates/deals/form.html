@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="panel form-panel">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-md-8">
+        {{ form.title.label(class='form-label') }}
+        {{ form.title(class='form-control' + (' is-invalid' if form.title.errors else '')) }}
+        {% for error in form.title.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-4">
+        {{ form.value.label(class='form-label') }}
+        {{ form.value(class='form-control' + (' is-invalid' if form.value.errors else ''), step='0.01') }}
+        {% for error in form.value.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-4">
+        {{ form.stage.label(class='form-label') }}
+        {{ form.stage(class='form-select') }}
+      </div>
+      <div class="col-md-4">
+        {{ form.probability.label(class='form-label') }}
+        {{ form.probability(class='form-control' + (' is-invalid' if form.probability.errors else '')) }}
+        {% for error in form.probability.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-4">
+        {{ form.expected_close_date.label(class='form-label') }}
+        {{ form.expected_close_date(class='form-control', type='date') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.company_id.label(class='form-label') }}
+        {{ form.company_id(class='form-select') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.contact_id.label(class='form-label') }}
+        {{ form.contact_id(class='form-select') }}
+      </div>
+      <div class="col-12">
+        {{ form.notes.label(class='form-label') }}
+        {{ form.notes(class='form-control', rows=4) }}
+      </div>
+    </div>
+    <div class="form-actions">
+      <a href="{{ url_for('deals.index') }}" class="btn btn-outline-secondary">Cancel</a>
+      {{ form.submit(class='btn btn-primary') }}
+    </div>
+  </form>
+</div>
+{% endblock %}

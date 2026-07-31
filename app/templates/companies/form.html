@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="panel form-panel">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-md-6">
+        {{ form.name.label(class='form-label') }}
+        {{ form.name(class='form-control' + (' is-invalid' if form.name.errors else '')) }}
+        {% for error in form.name.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.industry.label(class='form-label') }}
+        {{ form.industry(class='form-control') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.website.label(class='form-label') }}
+        {{ form.website(class='form-control', placeholder='https://') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.email.label(class='form-label') }}
+        {{ form.email(class='form-control' + (' is-invalid' if form.email.errors else '')) }}
+        {% for error in form.email.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.phone.label(class='form-label') }}
+        {{ form.phone(class='form-control') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.address.label(class='form-label') }}
+        {{ form.address(class='form-control') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.city.label(class='form-label') }}
+        {{ form.city(class='form-control') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.country.label(class='form-label') }}
+        {{ form.country(class='form-control') }}
+      </div>
+      <div class="col-12">
+        {{ form.notes.label(class='form-label') }}
+        {{ form.notes(class='form-control', rows=4) }}
+      </div>
+    </div>
+    <div class="form-actions">
+      <a href="{{ url_for('companies.index') }}" class="btn btn-outline-secondary">Cancel</a>
+      {{ form.submit(class='btn btn-primary') }}
+    </div>
+  </form>
+</div>
+{% endblock %}

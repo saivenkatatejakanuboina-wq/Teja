@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('companies.edit', company_id=company.id) }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-pencil"></i> Edit
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="detail-header">
+        <div>
+          <h2>{{ company.name }}</h2>
+          <p class="text-muted mb-0">{{ company.industry or 'Industry not set' }}</p>
+        </div>
+      </div>
+      <dl class="detail-grid">
+        <div>
+          <dt>Website</dt>
+          <dd>
+            {% if company.website %}
+            <a href="{{ company.website }}" target="_blank" rel="noopener">{{ company.website }}</a>
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>{{ company.email or '—' }}</dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd>{{ company.phone or '—' }}</dd>
+        </div>
+        <div>
+          <dt>Location</dt>
+          <dd>
+            {% if company.city or company.country %}
+            {{ [company.city, company.country]|select|join(', ') }}
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+      </dl>
+      {% if company.notes %}
+      <div class="mt-3">
+        <h3 class="h6 text-uppercase text-muted">Notes</h3>
+        <p class="mb-0">{{ company.notes }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel mb-4">
+      <div class="panel-header"><h2>Contacts</h2></div>
+      {% set contacts = company.contacts.all() %}
+      {% if contacts %}
+      <ul class="simple-list">
+        {% for contact in contacts %}
+        <li>
+          <a href="{{ url_for('contacts.detail', contact_id=contact.id) }}">{{ contact.full_name }}</a>
+          <span class="badge text-bg-light">{{ contact.status }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty-state">No contacts linked.</p>
+      {% endif %}
+    </div>
+    <div class="panel">
+      <div class="panel-header"><h2>Deals</h2></div>
+      {% set deals = company.deals.all() %}
+      {% if deals %}
+      <ul class="simple-list">
+        {% for deal in deals %}
+        <li>
+          <a href="{{ url_for('deals.detail', deal_id=deal.id) }}">{{ deal.title }}</a>
+          <span>${{ '%.0f'|format(deal.value) }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty-state">No deals linked.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

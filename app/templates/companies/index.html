@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('companies.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-building-add"></i> New Company
+</a>
+{% endblock %}
+
+{% block content %}
+<form class="filter-bar" method="GET">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search companies...">
+  </div>
+  <button class="btn btn-outline-secondary" type="submit">Search</button>
+</form>
+
+<div class="panel">
+  {% if companies %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Industry</th>
+          <th>City</th>
+          <th>Contacts</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for company in companies %}
+        <tr>
+          <td>
+            <a href="{{ url_for('companies.detail', company_id=company.id) }}">{{ company.name }}</a>
+            {% if company.website %}<div class="text-muted small">{{ company.website }}</div>{% endif %}
+          </td>
+          <td>{{ company.industry or '—' }}</td>
+          <td>{{ company.city or '—' }}</td>
+          <td>{{ company.contacts.count() }}</td>
+          <td class="text-end table-actions">
+            <a href="{{ url_for('companies.edit', company_id=company.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="POST" action="{{ url_for('companies.delete', company_id=company.id) }}" class="d-inline" data-confirm="Delete this company?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">No companies found. <a href="{{ url_for('companies.create') }}">Add a company</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

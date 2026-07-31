@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('deals.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-plus-lg"></i> New Deal
+</a>
+{% endblock %}
+
+{% block content %}
+<form class="filter-bar" method="GET">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search deals...">
+  </div>
+  <select name="stage" class="form-select">
+    <option value="">All stages</option>
+    {% for s in ['Prospecting', 'Qualification', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'] %}
+    <option value="{{ s }}" {% if stage == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Filter</button>
+</form>
+
+<div class="panel">
+  {% if deals %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Deal</th>
+          <th>Company</th>
+          <th>Stage</th>
+          <th>Probability</th>
+          <th class="text-end">Value</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for deal in deals %}
+        <tr>
+          <td>
+            <a href="{{ url_for('deals.detail', deal_id=deal.id) }}">{{ deal.title }}</a>
+            {% if deal.expected_close_date %}
+            <div class="text-muted small">Close: {{ deal.expected_close_date.strftime('%b %d, %Y') }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if deal.company %}
+            <a href="{{ url_for('companies.detail', company_id=deal.company.id) }}">{{ deal.company.name }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="badge stage-badge stage-{{ deal.stage|replace(' ', '-')|lower }}">{{ deal.stage }}</span></td>
+          <td>{{ deal.probability }}%</td>
+          <td class="text-end">${{ '%.2f'|format(deal.value) }}</td>
+          <td class="text-end table-actions">
+            <a href="{{ url_for('deals.edit', deal_id=deal.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="POST" action="{{ url_for('deals.delete', deal_id=deal.id) }}" class="d-inline" data-confirm="Delete this deal?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">No deals found. <a href="{{ url_for('deals.create') }}">Create a deal</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

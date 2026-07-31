@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('contacts.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-person-plus"></i> New Contact
+</a>
+<a href="{{ url_for('deals.create') }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-plus-lg"></i> New Deal
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon contacts"><i class="bi bi-people"></i></div>
+    <div>
+      <span class="stat-label">Contacts</span>
+      <strong class="stat-value">{{ total_contacts }}</strong>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon companies"><i class="bi bi-building"></i></div>
+    <div>
+      <span class="stat-label">Companies</span>
+      <strong class="stat-value">{{ total_companies }}</strong>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon deals"><i class="bi bi-graph-up-arrow"></i></div>
+    <div>
+      <span class="stat-label">Open Pipeline</span>
+      <strong class="stat-value">${{ '%.0f'|format(pipeline_value) }}</strong>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon won"><i class="bi bi-trophy"></i></div>
+    <div>
+      <span class="stat-label">Won Revenue</span>
+      <strong class="stat-value">${{ '%.0f'|format(won_value) }}</strong>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Recent Deals</h2>
+        <a href="{{ url_for('deals.index') }}">View all</a>
+      </div>
+      {% if recent_deals %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Deal</th>
+              <th>Stage</th>
+              <th class="text-end">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for deal in recent_deals %}
+            <tr>
+              <td>
+                <a href="{{ url_for('deals.detail', deal_id=deal.id) }}">{{ deal.title }}</a>
+                {% if deal.company %}
+                <div class="text-muted small">{{ deal.company.name }}</div>
+                {% endif %}
+              </td>
+              <td><span class="badge stage-badge stage-{{ deal.stage|replace(' ', '-')|lower }}">{{ deal.stage }}</span></td>
+              <td class="text-end">${{ '%.2f'|format(deal.value) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state">No deals yet. <a href="{{ url_for('deals.create') }}">Create your first deal</a>.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="panel mb-4">
+      <div class="panel-header">
+        <h2>Pipeline Stages</h2>
+      </div>
+      {% if stage_data %}
+      <ul class="stage-list">
+        {% for stage, count in stage_data.items() %}
+        <li>
+          <span>{{ stage }}</span>
+          <strong>{{ count }}</strong>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty-state">Pipeline is empty.</p>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Recent Contacts</h2>
+        <a href="{{ url_for('contacts.index') }}">View all</a>
+      </div>
+      {% if recent_contacts %}
+      <ul class="simple-list">
+        {% for contact in recent_contacts %}
+        <li>
+          <a href="{{ url_for('contacts.detail', contact_id=contact.id) }}">{{ contact.full_name }}</a>
+          <span class="badge text-bg-light">{{ contact.status }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="empty-state">No contacts yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

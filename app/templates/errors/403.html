@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="error-panel">
+  <h1>403</h1>
+  <p>You do not have permission to access this page.</p>
+  <a href="{{ url_for('dashboard.index') if current_user.is_authenticated else url_for('auth.login') }}" class="btn btn-primary">Go Home</a>
+</div>
+{% endblock %}
+{% block auth_content %}
+<div class="auth-card text-center">
+  <h1>403</h1>
+  <p>You do not have permission to access this page.</p>
+  <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Sign In</a>
+</div>
+{% endblock %}
