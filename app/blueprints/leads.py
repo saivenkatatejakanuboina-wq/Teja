@@ -1,12 +1,16 @@
 """Lead Management blueprint — CRUD, search, filter, pagination, activity log."""
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
+from sqlalchemy.orm import joinedload
 
 from app.extensions import db
 from app.forms import LeadForm
-from app.models import LEAD_SOURCES, LEAD_STATUSES, Lead, User
+from app.models import LEAD_SOURCES, LEAD_STATUSES, ActivityLog, EmailMessage, Lead, WhatsAppMessage
 from app.services.activity import log_activity
+from app.services.choices import active_employees, employee_choices
+from app.utils.db import get_or_404
+from app.utils.pagination import paginate
 
 leads_bp = Blueprint("leads", __name__)
 
@@ -14,25 +18,11 @@ PER_PAGE = 10
 
 
 def _get_lead_or_404(lead_id: int) -> Lead:
-    lead = db.session.get(Lead, lead_id)
-    if lead is None:
-        abort(404)
-    return lead
-
-
-def _employee_choices():
-    employees = (
-        User.query.filter_by(is_active=True)
-        .order_by(User.full_name.asc())
-        .all()
-    )
-    return [(0, "— Unassigned —")] + [
-        (u.id, f"{u.full_name} ({u.role_label})") for u in employees
-    ]
+    return get_or_404(Lead, lead_id)
 
 
 def _populate_lead_form(form: LeadForm) -> None:
-    form.assigned_to_id.choices = _employee_choices()
+    form.assigned_to_id.choices = employee_choices(include_unassigned=True)
 
 
 def _apply_lead_data(lead: Lead, form: LeadForm) -> None:
@@ -60,9 +50,9 @@ def index():
     status = request.args.get("status", "").strip()
     source = request.args.get("source", "").strip()
     assigned = request.args.get("assigned", "").strip()
-    page = request.args.get("page", 1, type=int)
 
-    query = Lead.query
+    # Eager-load assignee to avoid N+1 queries in the list template
+    query = Lead.query.options(joinedload(Lead.assigned_employee))
 
     if q:
         like = f"%{q}%"
@@ -86,11 +76,9 @@ def index():
         query = query.filter(Lead.assigned_to_id == int(assigned))
 
     query = query.order_by(Lead.created_at.desc())
-    pagination = db.paginate(query, page=page, per_page=PER_PAGE, error_out=False)
+    pagination = paginate(query, per_page=PER_PAGE)
 
-    employees = (
-        User.query.filter_by(is_active=True).order_by(User.full_name.asc()).all()
-    )
+    employees = active_employees()
 
     return render_template(
         "leads/index.html",
@@ -138,11 +126,18 @@ def create():
 @login_required
 def detail(lead_id: int):
     """Lead detail with recent activity log and email history."""
-    from app.models import ActivityLog, EmailMessage, WhatsAppMessage
-
-    lead = _get_lead_or_404(lead_id)
+    lead = (
+        Lead.query.options(
+            joinedload(Lead.assigned_employee),
+            joinedload(Lead.created_by),
+            joinedload(Lead.customer),
+        )
+        .filter_by(id=lead_id)
+        .first_or_404()
+    )
     activities = (
-        ActivityLog.query.filter_by(lead_id=lead.id)
+        ActivityLog.query.options(joinedload(ActivityLog.user))
+        .filter_by(lead_id=lead.id)
         .order_by(ActivityLog.created_at.desc())
         .limit(20)
         .all()

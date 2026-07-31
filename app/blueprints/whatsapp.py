@@ -79,11 +79,18 @@ def _populate_compose_form(
 @whatsapp_bp.route("/")
 @login_required
 def index():
+    from sqlalchemy.orm import joinedload
+
+    from app.utils.pagination import paginate
+
     q = (request.args.get("q") or "").strip()
     status = (request.args.get("status") or "").strip()
-    page = request.args.get("page", 1, type=int)
 
-    query = WhatsAppMessage.query
+    query = WhatsAppMessage.query.options(
+        joinedload(WhatsAppMessage.lead),
+        joinedload(WhatsAppMessage.customer),
+        joinedload(WhatsAppMessage.sent_by),
+    )
     if status in {"opened", "sent", "failed", "queued"}:
         query = query.filter(WhatsAppMessage.status == status)
     if q:
@@ -95,8 +102,9 @@ def index():
             )
         )
 
-    pagination = query.order_by(WhatsAppMessage.created_at.desc()).paginate(
-        page=page, per_page=20, error_out=False
+    pagination = paginate(
+        query.order_by(WhatsAppMessage.created_at.desc()),
+        per_page=20,
     )
     return render_template(
         "whatsapp/history.html",
@@ -145,8 +153,16 @@ def compose():
             template=template,
         )
         if result.ok and result.external_url:
-            flash("WhatsApp chat prepared and saved to history.", "success")
-            return redirect(result.external_url)
+            from app.utils.security import whitelist_external_redirect
+
+            safe_url = whitelist_external_redirect(
+                result.external_url,
+                allowed_hosts={"wa.me", "api.whatsapp.com", "web.whatsapp.com"},
+            )
+            if safe_url:
+                flash("WhatsApp chat prepared and saved to history.", "success")
+                return redirect(safe_url)
+            flash("Blocked an unexpected WhatsApp redirect host.", "danger")
         if result.ok:
             flash("WhatsApp message recorded.", "success")
         else:

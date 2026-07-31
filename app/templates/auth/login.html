@@ -42,12 +42,11 @@
     {{ form.submit(class='btn btn-primary w-100') }}
   </form>
 
+  {% if allow_public_registration %}
   <p class="auth-footer">
     Need an employee account?
     <a href="{{ url_for('auth.register') }}">Register here</a>
   </p>
-  <p class="auth-footer mt-2 small">
-    Default admin: <code>admin</code> / <code>admin123</code>
-  </p>
+  {% endif %}
 </div>
 {% endblock %}

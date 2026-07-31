@@ -1,4 +1,4 @@
-"""Route protection helpers."""
+"""Route protection helpers (authn / authz)."""
 
 from functools import wraps
 
@@ -7,12 +7,12 @@ from flask_login import current_user
 
 
 def login_required_active(view):
-    """Ensure the user is authenticated and the account is active."""
+    """Ensure the user is authenticated and the account is still active."""
 
     @wraps(view)
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
-            return redirect(url_for("auth.login"))
+            return redirect(url_for("auth.login", next=None))
         if not current_user.is_active:
             flash("Your account is inactive. Contact an administrator.", "danger")
             return redirect(url_for("auth.logout"))
@@ -28,6 +28,9 @@ def admin_required(view):
     def wrapped(*args, **kwargs):
         if not current_user.is_authenticated:
             return redirect(url_for("auth.login"))
+        if not current_user.is_active:
+            flash("Your account is inactive. Contact an administrator.", "danger")
+            return redirect(url_for("auth.logout"))
         if not current_user.is_admin:
             abort(403)
         return view(*args, **kwargs)
@@ -36,7 +39,7 @@ def admin_required(view):
 
 
 def employee_required(view):
-    """Allow Admin or Employee accounts (any authenticated active user)."""
+    """Allow any authenticated active CRM role (admin / manager / employee)."""
 
     @wraps(view)
     def wrapped(*args, **kwargs):
@@ -47,3 +50,23 @@ def employee_required(view):
         return view(*args, **kwargs)
 
     return wrapped
+
+
+def permission_required(permission: str):
+    """Require a named permission (admins always pass via User.has_permission)."""
+
+    def decorator(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            if not current_user.is_authenticated:
+                return redirect(url_for("auth.login"))
+            if not current_user.is_active:
+                flash("Your account is inactive. Contact an administrator.", "danger")
+                return redirect(url_for("auth.logout"))
+            if not current_user.has_permission(permission):
+                abort(403)
+            return view(*args, **kwargs)
+
+        return wrapped
+
+    return decorator

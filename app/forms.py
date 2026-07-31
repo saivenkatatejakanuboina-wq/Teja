@@ -23,6 +23,8 @@ from wtforms.validators import (
     Length,
     NumberRange,
     Optional,
+    Regexp,
+    URL,
     ValidationError,
 )
 
@@ -41,6 +43,10 @@ from app.models import (
     USER_ROLES,
     User,
 )
+
+# Shared input patterns — keep phone fields consistent across CRM forms.
+PHONE_RE = r"^[0-9+\-\s()]*$"
+WHATSAPP_RE = r"^\+?[0-9\s\-()]{7,20}$"
 
 
 class MultiCheckboxField(SelectMultipleField):
@@ -118,8 +124,22 @@ class RegisterForm(FlaskForm):
 class CompanyForm(FlaskForm):
     name = StringField("Company Name", validators=[DataRequired(), Length(max=150)])
     industry = StringField("Industry", validators=[Optional(), Length(max=100)])
-    website = StringField("Website", validators=[Optional(), Length(max=200)])
-    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    website = StringField(
+        "Website",
+        validators=[
+            Optional(),
+            Length(max=200),
+            URL(require_tld=False, message="Enter a valid URL."),
+        ],
+    )
+    phone = StringField(
+        "Phone",
+        validators=[
+            Optional(),
+            Length(max=40),
+            Regexp(PHONE_RE, message="Phone contains invalid characters."),
+        ],
+    )
     email = StringField("Email", validators=[Optional(), Email(), Length(max=120)])
     address = StringField("Address", validators=[Optional(), Length(max=255)])
     city = StringField("City", validators=[Optional(), Length(max=100)])
@@ -132,7 +152,14 @@ class ContactForm(FlaskForm):
     first_name = StringField("First Name", validators=[DataRequired(), Length(max=80)])
     last_name = StringField("Last Name", validators=[DataRequired(), Length(max=80)])
     email = StringField("Email", validators=[Optional(), Email(), Length(max=120)])
-    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    phone = StringField(
+        "Phone",
+        validators=[
+            Optional(),
+            Length(max=40),
+            Regexp(PHONE_RE, message="Phone contains invalid characters."),
+        ],
+    )
     job_title = StringField("Job Title", validators=[Optional(), Length(max=120)])
     status = SelectField("Status", choices=CONTACT_STATUSES, validators=[DataRequired()])
     company_id = SelectField("Company", coerce=int, validators=[Optional()])
@@ -186,10 +213,21 @@ class CustomerForm(FlaskForm):
             Length(max=120),
         ],
     )
-    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    phone = StringField(
+        "Phone",
+        validators=[
+            Optional(),
+            Length(max=40),
+            Regexp(PHONE_RE, message="Phone contains invalid characters."),
+        ],
+    )
     whatsapp_number = StringField(
         "WhatsApp Number",
-        validators=[Optional(), Length(max=40)],
+        validators=[
+            Optional(),
+            Length(max=40),
+            Regexp(WHATSAPP_RE, message="Use international format, e.g. +15550100"),
+        ],
         description="International format, e.g. +15550100",
     )
     address = StringField("Address", validators=[Optional(), Length(max=255)])
@@ -197,7 +235,10 @@ class CustomerForm(FlaskForm):
         "GST",
         validators=[Optional(), Length(max=40)],
     )
-    website = StringField("Website", validators=[Optional(), Length(max=200)])
+    website = StringField(
+        "Website",
+        validators=[Optional(), Length(max=200), URL(require_tld=False, message="Enter a valid URL.")],
+    )
     industry = StringField("Industry", validators=[Optional(), Length(max=100)])
     country = StringField("Country", validators=[Optional(), Length(max=100)])
     status = SelectField(
@@ -227,10 +268,21 @@ class LeadForm(FlaskForm):
             Length(max=120),
         ],
     )
-    phone = StringField("Phone", validators=[Optional(), Length(max=40)])
+    phone = StringField(
+        "Phone",
+        validators=[
+            Optional(),
+            Length(max=40),
+            Regexp(PHONE_RE, message="Phone contains invalid characters."),
+        ],
+    )
     whatsapp_number = StringField(
         "WhatsApp Number",
-        validators=[Optional(), Length(max=40)],
+        validators=[
+            Optional(),
+            Length(max=40),
+            Regexp(WHATSAPP_RE, message="Use international format, e.g. +15550100"),
+        ],
         description="International format, e.g. +15550100",
     )
     country = StringField("Country", validators=[Optional(), Length(max=100)])
@@ -582,6 +634,10 @@ class ComposeWhatsAppForm(FlaskForm):
         validators=[
             DataRequired(message="WhatsApp number is required."),
             Length(max=40),
+            Regexp(
+                WHATSAPP_RE,
+                message="Use international format with country code, e.g. +15550100",
+            ),
         ],
     )
     message_body = TextAreaField(

@@ -3,43 +3,32 @@
 from calendar import Calendar, month_name
 from datetime import date, datetime, time, timedelta
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app.extensions import db
 from app.forms import FollowUpForm
-from app.models import FOLLOWUP_TYPES, Customer, FollowUp, Lead, User
+from app.models import FOLLOWUP_TYPES, FollowUp
 from app.services.activity import log_activity
+from app.utils.db import get_or_404
 
 followups_bp = Blueprint("followups", __name__)
 
 
 def _get_followup_or_404(followup_id: int) -> FollowUp:
-    followup = db.session.get(FollowUp, followup_id)
-    if followup is None:
-        abort(404)
-    return followup
-
-
-def _employee_choices():
-    users = User.query.filter_by(is_active=True).order_by(User.full_name.asc()).all()
-    return [(u.id, f"{u.full_name} ({u.role_label})") for u in users]
-
-
-def _lead_choices():
-    leads = Lead.query.order_by(Lead.name.asc()).all()
-    return [(0, "— None —")] + [(lead.id, lead.name) for lead in leads]
-
-
-def _customer_choices():
-    customers = Customer.query.order_by(Customer.name.asc()).all()
-    return [(0, "— None —")] + [(c.id, c.name) for c in customers]
+    return get_or_404(FollowUp, followup_id)
 
 
 def _populate_form(form: FollowUpForm) -> None:
-    form.assigned_to_id.choices = _employee_choices()
-    form.lead_id.choices = _lead_choices()
-    form.customer_id.choices = _customer_choices()
+    from app.services.choices import customer_choices, employee_choices, lead_choices
+
+    form.assigned_to_id.choices = employee_choices(include_unassigned=False)
+    form.lead_id.choices = [(0, "— None —")] + [
+        (lid, name) for lid, name in lead_choices(include_blank=False)
+    ]
+    form.customer_id.choices = [(0, "— None —")] + [
+        (cid, name) for cid, name in customer_choices(include_blank=False)
+    ]
 
 
 def _apply_form_data(followup: FollowUp, form: FollowUpForm) -> None:
@@ -57,15 +46,21 @@ def _apply_form_data(followup: FollowUp, form: FollowUpForm) -> None:
 
 
 def _sync_missed_statuses() -> None:
-    """Mark overdue Scheduled follow-ups as Missed."""
+    """Mark overdue Scheduled follow-ups as Missed (bulk SQL, no row-by-row load)."""
     now = datetime.now()
-    overdue = FollowUp.query.filter(FollowUp.status == "Scheduled").all()
-    changed = False
-    for item in overdue:
-        if item.reminder_datetime < now:
-            item.status = "Missed"
-            changed = True
-    if changed:
+    today = now.date()
+    current_time = now.time()
+    updated = FollowUp.query.filter(
+        FollowUp.status == "Scheduled",
+        db.or_(
+            FollowUp.reminder_date < today,
+            db.and_(
+                FollowUp.reminder_date == today,
+                FollowUp.reminder_time < current_time,
+            ),
+        ),
+    ).update({FollowUp.status: "Missed"}, synchronize_session=False)
+    if updated:
         db.session.commit()
 
 
@@ -100,7 +95,13 @@ def index():
     q = request.args.get("q", "").strip()
     today = date.today()
 
-    query = FollowUp.query
+    from sqlalchemy.orm import joinedload
+
+    query = FollowUp.query.options(
+        joinedload(FollowUp.assigned_to),
+        joinedload(FollowUp.lead),
+        joinedload(FollowUp.customer),
+    )
     if view == "today":
         query = query.filter(FollowUp.reminder_date == today)
     elif view == "upcoming":
@@ -321,7 +322,9 @@ def complete(followup_id: int):
     )
     db.session.commit()
     flash("Follow-up marked as completed.", "success")
-    return redirect(request.referrer or url_for("followups.index", view="today"))
+    from app.utils.security import safe_referrer_or
+
+    return redirect(safe_referrer_or(url_for("followups.index", view="today")))
 
 
 @followups_bp.route("/<int:followup_id>/delete", methods=["POST"])

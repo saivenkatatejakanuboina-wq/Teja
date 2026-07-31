@@ -2,14 +2,17 @@
 
 from datetime import date
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import func
 
 from app.extensions import db
 from app.forms import TaskForm
-from app.models import TASK_PRIORITIES, TASK_STATUSES, Task, User
+from app.models import TASK_PRIORITIES, TASK_STATUSES, Task
 from app.services.activity import log_activity
+from app.services.choices import active_employees, employee_choices
+from app.utils.db import get_or_404
+from app.utils.pagination import paginate
 
 tasks_bp = Blueprint("tasks", __name__)
 
@@ -17,19 +20,11 @@ PER_PAGE = 10
 
 
 def _get_task_or_404(task_id: int) -> Task:
-    task = db.session.get(Task, task_id)
-    if task is None:
-        abort(404)
-    return task
-
-
-def _employee_choices():
-    users = User.query.filter_by(is_active=True).order_by(User.full_name.asc()).all()
-    return [(u.id, f"{u.full_name} ({u.role_label})") for u in users]
+    return get_or_404(Task, task_id)
 
 
 def _populate_form(form: TaskForm) -> None:
-    form.assigned_to_id.choices = _employee_choices()
+    form.assigned_to_id.choices = employee_choices(include_unassigned=False)
 
 
 def _apply_form_data(task: Task, form: TaskForm) -> None:
@@ -106,15 +101,16 @@ def _dashboard_stats() -> dict:
 @login_required
 def index():
     """Task list with search and filters."""
+    from sqlalchemy.orm import joinedload
+
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "").strip()
     priority = request.args.get("priority", "").strip()
     assigned = request.args.get("assigned", "").strip()
     due = request.args.get("due", "").strip()
-    page = request.args.get("page", 1, type=int)
     today = date.today()
 
-    query = Task.query
+    query = Task.query.options(joinedload(Task.assigned_to))
     if q:
         like = f"%{q}%"
         query = query.filter(
@@ -140,8 +136,8 @@ def index():
         Task.due_date.asc().nullslast(),
         Task.created_at.desc(),
     )
-    pagination = db.paginate(query, page=page, per_page=PER_PAGE, error_out=False)
-    employees = User.query.filter_by(is_active=True).order_by(User.full_name.asc()).all()
+    pagination = paginate(query, per_page=PER_PAGE)
+    employees = active_employees()
 
     return render_template(
         "tasks/index.html",
@@ -253,7 +249,9 @@ def complete(task_id: int):
     )
     db.session.commit()
     flash("Task marked as completed.", "success")
-    return redirect(request.referrer or url_for("tasks.index"))
+    from app.utils.security import safe_referrer_or
+
+    return redirect(safe_referrer_or(url_for("tasks.index")))
 
 
 @tasks_bp.route("/<int:task_id>/delete", methods=["POST"])

@@ -418,7 +418,16 @@ def import_customers(rows: list[dict[str, Any]], *, user_id: int | None = None) 
 
 
 def export_leads_csv(leads: Iterable[Lead] | None = None) -> str:
-    query = leads if leads is not None else Lead.query.order_by(Lead.created_at.desc()).all()
+    if leads is None:
+        from sqlalchemy.orm import joinedload
+
+        query = (
+            Lead.query.options(joinedload(Lead.assigned_employee))
+            .order_by(Lead.created_at.desc())
+            .all()
+        )
+    else:
+        query = leads
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=LEAD_FIELDNAMES)
     writer.writeheader()

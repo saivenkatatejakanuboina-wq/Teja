@@ -49,11 +49,18 @@ def _populate_compose_form(form: ComposeEmailForm, selected_lead: Lead | None = 
 @login_required
 def index():
     """Email history (sent / failed)."""
+    from sqlalchemy.orm import joinedload
+
+    from app.utils.pagination import paginate
+
     q = (request.args.get("q") or "").strip()
     status = (request.args.get("status") or "").strip()
-    page = request.args.get("page", 1, type=int)
 
-    query = EmailMessage.query
+    query = EmailMessage.query.options(
+        joinedload(EmailMessage.lead),
+        joinedload(EmailMessage.sent_by),
+        joinedload(EmailMessage.template),
+    )
     if status in {"sent", "failed", "queued"}:
         query = query.filter(EmailMessage.status == status)
     if q:
@@ -66,8 +73,9 @@ def index():
             )
         )
 
-    pagination = query.order_by(EmailMessage.created_at.desc()).paginate(
-        page=page, per_page=20, error_out=False
+    pagination = paginate(
+        query.order_by(EmailMessage.created_at.desc()),
+        per_page=20,
     )
     settings_ready = email_service.smtp_configured()
 

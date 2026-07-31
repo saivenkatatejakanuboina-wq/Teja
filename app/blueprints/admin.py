@@ -20,6 +20,8 @@ from app.models import (
 )
 from app.services.activity import log_activity
 from app.services.admin_service import ensure_user_permissions
+from app.utils.db import get_or_404
+from app.utils.pagination import paginate
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -71,8 +73,6 @@ def users():
     q = (request.args.get("q") or "").strip()
     role = (request.args.get("role") or "").strip()
     status = (request.args.get("status") or "").strip()
-    page = request.args.get("page", 1, type=int)
-    per_page = 10
 
     query = User.query
     if q:
@@ -91,9 +91,7 @@ def users():
     elif status == "inactive":
         query = query.filter(User.is_active.is_(False))
 
-    pagination = query.order_by(User.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
+    pagination = paginate(query.order_by(User.created_at.desc()), per_page=10)
 
     return render_template(
         "admin/users.html",
@@ -162,7 +160,7 @@ def user_create():
 @admin_bp.route("/users/<int:user_id>/edit", methods=["GET", "POST"])
 @admin_required
 def user_edit(user_id: int):
-    user = User.query.get_or_404(user_id)
+    user = get_or_404(User, user_id)
     ensure_user_permissions(user)
     form = AdminUserForm(original_user=user, obj=user)
 
@@ -229,7 +227,7 @@ def user_edit(user_id: int):
 @admin_bp.route("/users/<int:user_id>/toggle", methods=["POST"])
 @admin_required
 def user_toggle(user_id: int):
-    user = User.query.get_or_404(user_id)
+    user = get_or_404(User, user_id)
     if user.id == current_user.id:
         flash("You cannot deactivate your own account.", "warning")
         return redirect(url_for("admin.users"))
@@ -248,13 +246,15 @@ def user_toggle(user_id: int):
     )
     db.session.commit()
     flash(f"User {state}.", "success")
-    return redirect(request.referrer or url_for("admin.users"))
+    from app.utils.security import safe_referrer_or
+
+    return redirect(safe_referrer_or(url_for("admin.users")))
 
 
 @admin_bp.route("/users/<int:user_id>/reset-password", methods=["GET", "POST"])
 @admin_required
 def user_reset_password(user_id: int):
-    user = User.query.get_or_404(user_id)
+    user = get_or_404(User, user_id)
     form = AdminResetPasswordForm()
     if form.validate_on_submit():
         user.set_password(form.new_password.data)
@@ -278,7 +278,7 @@ def user_reset_password(user_id: int):
 @admin_bp.route("/users/<int:user_id>/delete", methods=["POST"])
 @admin_required
 def user_delete(user_id: int):
-    user = User.query.get_or_404(user_id)
+    user = get_or_404(User, user_id)
     if user.id == current_user.id:
         flash("You cannot delete your own account.", "warning")
         return redirect(url_for("admin.users"))
@@ -328,8 +328,6 @@ def roles():
 def login_history():
     q = (request.args.get("q") or "").strip()
     status = (request.args.get("status") or "").strip()
-    page = request.args.get("page", 1, type=int)
-    per_page = 20
 
     query = LoginHistory.query
     if q:
@@ -343,8 +341,9 @@ def login_history():
     if status in {"success", "failed"}:
         query = query.filter(LoginHistory.status == status)
 
-    pagination = query.order_by(LoginHistory.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
+    pagination = paginate(
+        query.order_by(LoginHistory.created_at.desc()),
+        per_page=20,
     )
 
     success_count = (

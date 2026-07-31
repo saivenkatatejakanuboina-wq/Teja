@@ -7,6 +7,8 @@ from app.extensions import db
 from app.forms import CustomerForm
 from app.models import ActivityLog, Customer, Lead
 from app.services.activity import log_activity
+from app.utils.db import get_or_404
+from app.utils.pagination import paginate
 
 customers_bp = Blueprint("customers", __name__)
 
@@ -14,10 +16,7 @@ PER_PAGE = 10
 
 
 def _get_customer_or_404(customer_id: int) -> Customer:
-    customer = db.session.get(Customer, customer_id)
-    if customer is None:
-        abort(404)
-    return customer
+    return get_or_404(Customer, customer_id)
 
 
 def _apply_customer_data(customer: Customer, form: CustomerForm) -> None:
@@ -45,7 +44,6 @@ def index():
     """Customer list with search and pagination."""
     q = request.args.get("q", "").strip()
     status = request.args.get("status", "").strip()
-    page = request.args.get("page", 1, type=int)
 
     query = Customer.query
     if q:
@@ -65,7 +63,7 @@ def index():
         query = query.filter(Customer.status == status)
 
     query = query.order_by(Customer.created_at.desc())
-    pagination = db.paginate(query, page=page, per_page=PER_PAGE, error_out=False)
+    pagination = paginate(query, per_page=PER_PAGE)
 
     return render_template(
         "customers/index.html",

@@ -15,13 +15,15 @@ activities_bp = Blueprint("activities", __name__, url_prefix="/activities")
 @activities_bp.route("/")
 @login_required
 def index():
+    from sqlalchemy.orm import joinedload
+
+    from app.utils.pagination import paginate
+
     q = (request.args.get("q") or "").strip()
     action_filter = (request.args.get("action") or "").strip()
     user_id = request.args.get("user_id", type=int)
-    page = request.args.get("page", 1, type=int)
-    per_page = 20
 
-    query = ActivityLog.query
+    query = ActivityLog.query.options(joinedload(ActivityLog.user))
     mapped = activity_filter_clause(action_filter)
     if mapped:
         action_name, entity_type = mapped
@@ -46,8 +48,9 @@ def index():
             )
         )
 
-    pagination = query.order_by(ActivityLog.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
+    pagination = paginate(
+        query.order_by(ActivityLog.created_at.desc()),
+        per_page=20,
     )
 
     users = User.query.order_by(User.full_name.asc()).all()

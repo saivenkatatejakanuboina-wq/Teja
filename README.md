@@ -102,50 +102,21 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
 ├── requirements.txt
 ├── .env.example
 ├── README.md
+├── wsgi.py                # Production WSGI entry (gunicorn)
+├── Procfile               # Process definition for PaaS deploys
+├── app.py                 # Local development entry
 └── app/
-    ├── __init__.py        # App factory (creates DB + seeds Admin)
+    ├── __init__.py        # App factory
+    ├── seed.py            # Startup seed helpers
     ├── extensions.py      # SQLAlchemy, LoginManager, CSRF
-    ├── decorators.py      # Protected route helpers
-    ├── forms.py           # WTForms (incl. Login / Register)
-    ├── models.py          # Model layer (User, Company, Contact, Deal)
-    ├── blueprints/        # Controllers (MVC)
-    │   ├── auth.py        # Auth blueprint
-    │   ├── dashboard.py
-    │   ├── leads.py       # Lead Management
-    │   ├── customers.py   # Customer Management
-    │   ├── followups.py   # Follow-up Management
-    │   ├── tasks.py       # Task Management
-    │   ├── reports.py     # Reports + CSV export
-    │   ├── settings.py    # Settings module
-    │   ├── admin.py       # Admin Panel
-    │   ├── activities.py  # Activity Log
-    │   ├── csv_io.py      # CSV Import / Export
-    │   ├── emails.py      # SMTP compose, templates, history
-    │   ├── whatsapp.py    # WhatsApp compose, templates, history
-    │   ├── companies.py
-    │   ├── contacts.py
-    │   └── deals.py
-    ├── services/
-    │   ├── activity.py    # Activity log helper
-    │   ├── admin_service.py
-    │   ├── csv_io.py      # CSV validate / import / export
-    │   ├── email_service.py
-    │   ├── whatsapp_service.py
-    │   ├── whatsapp_providers.py  # click-to-chat + Business API stub
-    │   ├── reports.py     # Report aggregations
-    │   └── settings_service.py
-    ├── templates/         # Views (MVC)
-    │   ├── admin/         # Admin dashboard, users, roles, history
-    │   ├── activities/    # Activity Log table
-    │   ├── csv/           # CSV Import / Export UI
-    │   ├── emails/        # Compose, templates, history
-    │   ├── whatsapp/      # WhatsApp compose, templates, history
-    │   └── auth/
-    │       ├── login.html
-    │       └── register.html
+    ├── decorators.py      # Authn / authz helpers
+    ├── forms.py           # WTForms
+    ├── models.py          # SQLAlchemy models
+    ├── utils/             # Shared pagination, redirects, DB helpers
+    ├── blueprints/        # Route controllers
+    ├── services/          # Domain services (email, whatsapp, csv, …)
+    ├── templates/
     └── static/
-        ├── css/style.css
-        └── js/app.js
 ```
 
 ## Setup Instructions
@@ -175,59 +146,87 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` as needed:
+Edit `.env` for local development:
 
 ```env
-FLASK_APP=app.py
+FLASK_APP=wsgi:app
 FLASK_ENV=development
 SECRET_KEY=change-this-to-a-long-random-secret
-DATABASE_URL=sqlite:///crm.db
+DATABASE_URL=sqlite:///instance/crm.db
+SEED_DEMO_USERS=true
+ALLOW_PUBLIC_REGISTRATION=true
 ```
 
-### 5. Run the application
+### 5. Run locally
 
 ```bash
 python app.py
+# or
+flask --app wsgi:app run
 ```
 
-Or with the Flask CLI:
-
-```bash
-flask run
-```
-
-The app starts at [http://127.0.0.1:5000](http://127.0.0.1:5000).
-
-The SQLite database (`crm.db`) is created automatically on first launch — no migration step required.
+The app starts at [http://127.0.0.1:5000](http://127.0.0.1:5000).  
+SQLite tables are created automatically on startup.
 
 ### 6. Sign in
 
-A default **Admin** account is created automatically:
+Default **Admin** (development only):
 
-| Field    | Value               |
-|----------|---------------------|
-| Username | `admin`             |
-| Password | `admin123`          |
-| Role     | Admin               |
+| Field    | Value      |
+|----------|------------|
+| Username | `admin`    |
+| Password | `admin123` |
 
-1. Open [http://127.0.0.1:5000/login](http://127.0.0.1:5000/login)
-2. Sign in as Admin, **or** register a new **Employee** account
-3. After login you are redirected to the **Dashboard** (`/`)
+Override via `ADMIN_USERNAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD`.
 
-Override the default admin via `.env` (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`).
+## Deployment
+
+Use the WSGI entrypoint with **gunicorn** (included in `requirements.txt`):
+
+```bash
+export FLASK_ENV=production
+export SECRET_KEY="$(openssl rand -hex 32)"
+export ADMIN_PASSWORD="replace-with-a-strong-password"
+export ALLOW_PUBLIC_REGISTRATION=false
+export SEED_DEMO_USERS=false
+gunicorn wsgi:app --bind 0.0.0.0:8000 --workers 2
+```
+
+Or on platforms that read a Procfile:
+
+```bash
+# Procfile
+web: gunicorn wsgi:app --bind 0.0.0.0:$PORT --workers 2
+```
+
+Production config **requires** a non-default `SECRET_KEY` and `ADMIN_PASSWORD`.
+
+Health checks:
+
+| Endpoint  | Purpose                |
+|-----------|------------------------|
+| `/health` | Liveness (always 200)  |
+| `/ready`  | DB readiness           |
+
+Notes for production:
+
+- Put TLS termination and static caching on a reverse proxy (nginx / cloud load balancer)
+- Prefer Postgres (`DATABASE_URL=postgresql+psycopg://...`) for multi-worker deploys
+- Keep `.env` out of source control
+- Disable public registration unless intentionally needed
 
 ## Authentication
 
 | Route       | Description                                      |
 |-------------|--------------------------------------------------|
 | `/login`    | Bootstrap login form (Remember me supported)     |
-| `/register` | Create an Employee account                       |
-| `/logout`   | End session (protected)                          |
+| `/register` | Create an Employee account (optional / flag)     |
+| `/logout`   | End session (CSRF-protected POST)                |
 | `/`         | Dashboard — requires login                       |
 
-- Passwords are hashed with Werkzeug (`generate_password_hash` / `check_password_hash`)
-- Sessions are managed by Flask-Login (`login_user` / `logout_user` / `user_loader`)
-- CRM routes use `@login_required`; admin-only helpers live in `app/decorators.py`
+- Passwords are hashed with Werkzeug
+- Sessions are managed by Flask-Login
+- Route guards live in `app/decorators.py` (`admin_required`, `permission_required`)
 
 ## Usage Overview
 
@@ -240,6 +239,11 @@ Override the default admin via `.env` (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_P
 | Tasks      | `/tasks`      | Task list + `/tasks/dashboard`                   |
 | Reports    | `/reports`    | Charts + CSV export                              |
 | Settings   | `/settings`   | Company, SMTP, theme, backup, profile            |
+| Admin      | `/admin`      | Users, roles, permissions, login history         |
+| Activities | `/activities` | Cross-module activity log                        |
+| CSV        | `/csv`        | Lead/customer import & export                    |
+| Emails     | `/emails`     | SMTP compose, templates, history                 |
+| WhatsApp   | `/whatsapp`   | Click-to-chat compose, templates, history        |
 | Contacts   | `/contacts`   | People linked to companies                       |
 | Companies  | `/companies`  | Organizations you work with                       |
 | Deals      | `/deals`      | Sales opportunities with stages & values         |
@@ -250,20 +254,24 @@ Deal stages: Prospecting → Qualification → Proposal → Negotiation → Clos
 
 Configuration is loaded from environment variables in `config.py` via `python-dotenv`:
 
-| Variable       | Description                          | Default              |
-|----------------|--------------------------------------|----------------------|
-| `SECRET_KEY`      | Flask session / CSRF secret     | `dev-secret-key-...`     |
-| `DATABASE_URL`    | SQLAlchemy database URI         | `sqlite:///crm.db`       |
-| `FLASK_ENV`       | `development` or `production`   | `development`            |
-| `ADMIN_USERNAME`  | Seeded admin username           | `admin`                  |
-| `ADMIN_EMAIL`     | Seeded admin email              | `admin@minicrm.local`    |
-| `ADMIN_PASSWORD`  | Seeded admin password           | `admin123`               |
+| Variable                    | Description                         | Default                 |
+|-----------------------------|-------------------------------------|-------------------------|
+| `SECRET_KEY`                | Flask session / CSRF secret         | dev placeholder         |
+| `DATABASE_URL`              | SQLAlchemy database URI             | `sqlite:///instance/crm.db` |
+| `FLASK_ENV`                 | `development` or `production`       | `development`           |
+| `ADMIN_USERNAME`            | Seeded admin username               | `admin`                 |
+| `ADMIN_EMAIL`               | Seeded admin email                  | `admin@minicrm.local`   |
+| `ADMIN_PASSWORD`            | Seeded admin password               | `admin123`              |
+| `SEED_DEMO_USERS`           | Seed sample employee account        | `true` (dev)            |
+| `ALLOW_PUBLIC_REGISTRATION` | Enable `/register`                  | `true` (dev) / `false` (prod) |
+| `MAIL_SUPPRESS_SEND`        | Skip SMTP delivery (store history)  | `false`                 |
 
 ## Development Notes
 
-- Architecture follows **MVC**: models in `app/models`, controllers as blueprints, views as Jinja templates.
+- Architecture follows **MVC**: models in `app/models.py`, controllers as blueprints, views as Jinja templates.
+- Shared helpers live in `app/utils/`; domain logic in `app/services/`.
 - Extensions are centralized in `app/extensions.py`.
-- Use `create_app()` for testing or alternative configs.
+- Use `create_app("development")` / `create_app("production")` for tests or alternate configs.
 
 ## License
 
