@@ -19,6 +19,7 @@ def create_app(config_name: str | None = None) -> Flask:
     _register_blueprints(app)
     _register_error_handlers(app)
     _create_database(app)
+    _seed_default_admin(app)
 
     return app
 
@@ -32,6 +33,7 @@ def _register_extensions(app: Flask) -> None:
 
     @login_manager.user_loader
     def load_user(user_id: str):
+        """Session management: reload the user from the user ID stored in the session."""
         return db.session.get(User, int(user_id))
 
 
@@ -66,6 +68,32 @@ def _register_error_handlers(app: Flask) -> None:
 def _create_database(app: Flask) -> None:
     """Create database tables automatically on startup."""
     with app.app_context():
-        from app import models  # noqa: F401
+        import app.models  # noqa: F401
 
         db.create_all()
+
+
+def _seed_default_admin(app: Flask) -> None:
+    """Ensure a default Admin account exists for first-time access."""
+    from app.models import ROLE_ADMIN, User
+
+    username = app.config.get("ADMIN_USERNAME", "admin")
+    email = app.config.get("ADMIN_EMAIL", "admin@minicrm.local")
+    password = app.config.get("ADMIN_PASSWORD", "admin123")
+
+    with app.app_context():
+        admin = User.query.filter_by(username=username).first()
+        if admin is None:
+            admin = User(
+                username=username,
+                email=email,
+                full_name="System Admin",
+                role=ROLE_ADMIN,
+            )
+            admin.set_password(password)
+            db.session.add(admin)
+            db.session.commit()
+            app.logger.info("Default admin account created: %s", username)
+        elif admin.role != ROLE_ADMIN:
+            admin.role = ROLE_ADMIN
+            db.session.commit()
