@@ -1,7 +1,8 @@
-"""WTForms for the Mini CRM."""
+"""WTForms for the Mini CRM — includes auth form validation."""
 
 from flask_wtf import FlaskForm
 from wtforms import (
+    BooleanField,
     DateField,
     FloatField,
     IntegerField,
@@ -32,21 +33,53 @@ CONTACT_STATUSES = [
 
 
 class LoginForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired(), Length(max=80)])
-    password = PasswordField("Password", validators=[DataRequired()])
+    username = StringField(
+        "Username",
+        validators=[DataRequired(message="Username is required."), Length(max=80)],
+    )
+    password = PasswordField(
+        "Password",
+        validators=[DataRequired(message="Password is required.")],
+    )
+    remember_me = BooleanField("Remember me", default=False)
     submit = SubmitField("Sign In")
 
 
 class RegisterForm(FlaskForm):
-    full_name = StringField("Full Name", validators=[DataRequired(), Length(max=120)])
-    username = StringField("Username", validators=[DataRequired(), Length(min=3, max=80)])
-    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=120)])
-    password = PasswordField("Password", validators=[DataRequired(), Length(min=6)])
+    full_name = StringField(
+        "Full Name",
+        validators=[DataRequired(message="Full name is required."), Length(max=120)],
+    )
+    username = StringField(
+        "Username",
+        validators=[
+            DataRequired(message="Username is required."),
+            Length(min=3, max=80, message="Username must be 3–80 characters."),
+        ],
+    )
+    email = StringField(
+        "Email",
+        validators=[
+            DataRequired(message="Email is required."),
+            Email(message="Enter a valid email address."),
+            Length(max=120),
+        ],
+    )
+    password = PasswordField(
+        "Password",
+        validators=[
+            DataRequired(message="Password is required."),
+            Length(min=6, message="Password must be at least 6 characters."),
+        ],
+    )
     confirm_password = PasswordField(
         "Confirm Password",
-        validators=[DataRequired(), EqualTo("password", message="Passwords must match.")],
+        validators=[
+            DataRequired(message="Please confirm your password."),
+            EqualTo("password", message="Passwords must match."),
+        ],
     )
-    submit = SubmitField("Create Account")
+    submit = SubmitField("Create Employee Account")
 
     def validate_username(self, field):
         if User.query.filter_by(username=field.data.strip()).first():
