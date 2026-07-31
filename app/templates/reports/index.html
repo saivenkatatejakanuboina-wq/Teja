@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Analytics across leads, deals, employees, and customers.</p>
+{% endblock %}
+
+{% block topbar_actions %}
+<div class="dropdown">
+  <button class="btn btn-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="bi bi-download"></i> Export CSV
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end shadow">
+    <li><a class="dropdown-item" href="{{ exports.monthly_leads }}">Monthly Leads</a></li>
+    <li><a class="dropdown-item" href="{{ exports.lead_sources }}">Lead Sources</a></li>
+    <li><a class="dropdown-item" href="{{ exports.won_vs_lost }}">Won vs Lost</a></li>
+    <li><a class="dropdown-item" href="{{ exports.employee_performance }}">Employee Performance</a></li>
+    <li><a class="dropdown-item" href="{{ exports.customer_growth }}">Customer Growth</a></li>
+  </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <div>
+          <h2>Monthly Leads</h2>
+          <p class="panel-hint">New leads created over the last 12 months</p>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ exports.monthly_leads }}">
+          <i class="bi bi-filetype-csv"></i> CSV
+        </a>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="monthlyLeadsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <div>
+          <h2>Lead Sources</h2>
+          <p class="panel-hint">Distribution by acquisition channel</p>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ exports.lead_sources }}">
+          <i class="bi bi-filetype-csv"></i> CSV
+        </a>
+      </div>
+      <div class="chart-wrap chart-wrap-sm">
+        <canvas id="leadSourcesChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-6">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <div>
+          <h2>Won vs Lost</h2>
+          <p class="panel-hint">Lead and deal outcomes</p>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ exports.won_vs_lost }}">
+          <i class="bi bi-filetype-csv"></i> CSV
+        </a>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="wonLostChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-xl-6">
+    <div class="panel h-100">
+      <div class="panel-header">
+        <div>
+          <h2>Customer Growth</h2>
+          <p class="panel-hint">New customers and cumulative total</p>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ exports.customer_growth }}">
+          <i class="bi bi-filetype-csv"></i> CSV
+        </a>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="customerGrowthChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="panel">
+      <div class="panel-header">
+        <div>
+          <h2>Employee Performance</h2>
+          <p class="panel-hint">Leads, wins, customers, and completed tasks by employee</p>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ exports.employee_performance }}">
+          <i class="bi bi-filetype-csv"></i> CSV
+        </a>
+      </div>
+      <div class="chart-wrap chart-wrap-lg">
+        <canvas id="employeePerformanceChart"></canvas>
+      </div>
+
+      {% if reports.employee_performance.rows %}
+      <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Role</th>
+              <th class="text-end">Leads</th>
+              <th class="text-end">Leads Won</th>
+              <th class="text-end">Customers</th>
+              <th class="text-end">Tasks Done</th>
+              <th class="text-end">Deals Won</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in reports.employee_performance.rows %}
+            <tr>
+              <td class="fw-semibold">{{ row.employee }}</td>
+              <td><span class="badge text-bg-light">{{ row.role }}</span></td>
+              <td class="text-end">{{ row.leads_assigned }}</td>
+              <td class="text-end">{{ row.leads_won }}</td>
+              <td class="text-end">{{ row.customers }}</td>
+              <td class="text-end">{{ row.tasks_completed }}</td>
+              <td class="text-end">{{ row.deals_won }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  window.CRM_REPORTS = {{ reports | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

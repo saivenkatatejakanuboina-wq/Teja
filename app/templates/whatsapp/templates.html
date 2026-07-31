@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Predefined WhatsApp messages with placeholders like {{ '{{name}}' }} and {{ '{{company}}' }}.</p>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('whatsapp.compose') }}" class="btn btn-outline-secondary btn-sm">Compose</a>
+<a href="{{ url_for('whatsapp.template_create') }}" class="btn btn-success btn-sm">
+  <i class="bi bi-plus-lg"></i> New Template
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+  {% if templates %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Message</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tpl in templates %}
+        <tr>
+          <td class="fw-semibold">{{ tpl.name }}</td>
+          <td><div class="text-truncate" style="max-width: 360px;">{{ tpl.body }}</div></td>
+          <td>
+            {% if tpl.is_active %}
+            <span class="badge text-bg-success">Active</span>
+            {% else %}
+            <span class="badge text-bg-secondary">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-end table-actions">
+            <a href="{{ url_for('whatsapp.template_edit', template_id=tpl.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+            <form method="POST" action="{{ url_for('whatsapp.template_delete', template_id=tpl.id) }}" class="d-inline" onsubmit="return confirm('Delete this template?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state mb-0">No templates yet. <a href="{{ url_for('whatsapp.template_create') }}">Create one</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('whatsapp.index') }}" class="btn btn-outline-secondary btn-sm">Back to history</a>
+{% if message.external_url %}
+<a href="{{ message.external_url }}" class="btn btn-success btn-sm" target="_blank" rel="noopener">
+  <i class="bi bi-whatsapp"></i> Open chat again
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="panel compose-window">
+      <div class="compose-window-header">
+        <h2 class="mb-0">WhatsApp Message</h2>
+        <span class="badge {% if message.status in ['opened', 'sent'] %}text-bg-success{% elif message.status == 'failed' %}text-bg-danger{% else %}text-bg-secondary{% endif %}">
+          {{ message.status_label }}
+        </span>
+      </div>
+      <dl class="detail-grid mb-4">
+        <div>
+          <dt>To</dt>
+          <dd class="font-monospace">{{ message.to_number }}</dd>
+        </div>
+        <div>
+          <dt>Provider</dt>
+          <dd>{{ message.provider }}</dd>
+        </div>
+        <div>
+          <dt>Lead</dt>
+          <dd>
+            {% if message.lead %}
+            <a href="{{ url_for('leads.detail', lead_id=message.lead.id) }}">{{ message.lead.name }}</a>
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>Customer</dt>
+          <dd>
+            {% if message.customer %}
+            <a href="{{ url_for('customers.detail', customer_id=message.customer.id) }}">{{ message.customer.name }}</a>
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>Template</dt>
+          <dd>{{ message.template.name if message.template else '—' }}</dd>
+        </div>
+        <div>
+          <dt>Sent By</dt>
+          <dd>{{ message.sent_by.full_name if message.sent_by else '—' }}</dd>
+        </div>
+        <div>
+          <dt>Created</dt>
+          <dd>{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC</dd>
+        </div>
+      </dl>
+      {% if message.error_message %}
+      <div class="alert alert-warning">{{ message.error_message }}</div>
+      {% endif %}
+      <h3 class="h6 text-uppercase text-muted">Message</h3>
+      <pre class="email-body-view">{{ message.message_body }}</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% if converting is defined and converting %}
+<div class="alert alert-soft mb-4">
+  <i class="bi bi-arrow-left-right me-1"></i>
+  Converting lead <strong>{{ lead.name }}</strong> into a customer.
+  Review and complete the fields below, then save.
+</div>
+{% endif %}
+
+<div class="panel form-panel">
+  <form method="POST" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="row g-3">
+      <div class="col-md-6">
+        {{ form.name.label(class='form-label') }}
+        {{ form.name(class='form-control' + (' is-invalid' if form.name.errors else ''), placeholder='Company / customer name') }}
+        {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.primary_contact.label(class='form-label') }}
+        {{ form.primary_contact(class='form-control', placeholder='Main contact person') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.email.label(class='form-label') }}
+        {{ form.email(class='form-control' + (' is-invalid' if form.email.errors else '')) }}
+        {% for error in form.email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="col-md-6">
+        {{ form.phone.label(class='form-label') }}
+        {{ form.phone(class='form-control') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.whatsapp_number.label(class='form-label') }}
+        {{ form.whatsapp_number(class='form-control', placeholder='+15550100') }}
+        <div class="form-text">Used for WhatsApp chat. Falls back to phone if empty.</div>
+      </div>
+      <div class="col-12">
+        {{ form.address.label(class='form-label') }}
+        {{ form.address(class='form-control', placeholder='Street, city, state, postal code') }}
+      </div>
+      <div class="col-md-4">
+        {{ form.gst.label(class='form-label') }}
+        {{ form.gst(class='form-control', placeholder='GST number') }}
+      </div>
+      <div class="col-md-4">
+        {{ form.website.label(class='form-label') }}
+        {{ form.website(class='form-control', placeholder='https://') }}
+      </div>
+      <div class="col-md-4">
+        {{ form.industry.label(class='form-label') }}
+        {{ form.industry(class='form-control') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.country.label(class='form-label') }}
+        {{ form.country(class='form-control') }}
+      </div>
+      <div class="col-md-6">
+        {{ form.status.label(class='form-label') }}
+        {{ form.status(class='form-select') }}
+      </div>
+      <div class="col-12">
+        {{ form.notes.label(class='form-label') }}
+        {{ form.notes(class='form-control', rows=4) }}
+      </div>
+    </div>
+    <div class="form-actions">
+      {% if converting is defined and converting %}
+      <a href="{{ url_for('leads.detail', lead_id=lead.id) }}" class="btn btn-outline-secondary">Cancel</a>
+      {{ form.submit(class='btn btn-success', value='Convert to Customer') }}
+      {% else %}
+      <a href="{{ url_for('customers.detail', customer_id=customer.id) if customer is defined else url_for('customers.index') }}" class="btn btn-outline-secondary">Cancel</a>
+      {{ form.submit(class='btn btn-primary') }}
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

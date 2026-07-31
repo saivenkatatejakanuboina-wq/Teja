@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">{{ provider_message }}</p>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="panel">
+      <div class="panel-header"><h2>WhatsApp Provider Settings</h2></div>
+      <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+          {{ form.whatsapp_provider.label(class='form-label') }}
+          {{ form.whatsapp_provider(class='form-select') }}
+        </div>
+        <hr>
+        <h3 class="h6 text-uppercase text-muted">Business API (for later)</h3>
+        <p class="text-muted small">Credentials are stored so a Meta Cloud API client can be plugged into <code>WhatsAppBusinessAPIProvider</code> without schema changes.</p>
+        <div class="mb-3">
+          {{ form.whatsapp_api_base_url.label(class='form-label') }}
+          {{ form.whatsapp_api_base_url(class='form-control', placeholder='https://graph.facebook.com/v19.0') }}
+        </div>
+        <div class="mb-3">
+          {{ form.whatsapp_api_token.label(class='form-label') }}
+          {{ form.whatsapp_api_token(class='form-control', placeholder='Leave blank to keep existing token') }}
+        </div>
+        <div class="mb-3">
+          {{ form.whatsapp_phone_number_id.label(class='form-label') }}
+          {{ form.whatsapp_phone_number_id(class='form-control') }}
+        </div>
+        <div class="mb-4">
+          {{ form.whatsapp_business_account_id.label(class='form-label') }}
+          {{ form.whatsapp_business_account_id(class='form-control') }}
+        </div>
+        {{ form.submit(class='btn btn-primary') }}
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="panel">
+      <div class="panel-header"><h2>How it works</h2></div>
+      <ul class="mb-0">
+        <li class="mb-2"><strong>Click-to-Chat</strong> opens <code>wa.me</code> with your predefined message and stores history as <em>Opened</em>.</li>
+        <li class="mb-2"><strong>Business API</strong> settings prepare the CRM for Meta Cloud API. The provider scaffold lives in <code>app/services/whatsapp_providers.py</code>.</li>
+        <li class="mb-0">Store WhatsApp numbers on Leads and Customers (falls back to phone if empty).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
