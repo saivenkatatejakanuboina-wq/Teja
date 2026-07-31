@@ -161,9 +161,15 @@ def delete(customer_id: int):
     """Delete a customer."""
     customer = _get_customer_or_404(customer_id)
     name = customer.name
+    # Preserve audit trail: detach prior customer activities before delete
+    ActivityLog.query.filter_by(customer_id=customer.id).update(
+        {ActivityLog.customer_id: None},
+        synchronize_session=False,
+    )
     log_activity(
         "deleted",
         f"Deleted customer “{name}”",
+        customer_id=None,
         entity_type="customer",
         entity_id=customer_id,
         details=f"GST: {customer.gst or '—'}; Industry: {customer.industry or '—'}",

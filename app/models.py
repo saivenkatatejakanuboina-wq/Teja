@@ -642,8 +642,9 @@ class ActivityLog(db.Model):
     message = db.Column(db.String(500), nullable=False)
     details = db.Column(db.Text)
     ip_address = db.Column(db.String(64), index=True)
-    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id", ondelete="CASCADE"))
-    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id", ondelete="CASCADE"))
+    # SET NULL so audit history survives when a lead/customer is removed
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id", ondelete="SET NULL"))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id", ondelete="SET NULL"))
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     created_at = db.Column(
         db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True

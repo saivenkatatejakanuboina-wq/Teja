@@ -195,9 +195,15 @@ def edit(lead_id: int):
 @login_required
 def delete(lead_id: int):
     """Delete a lead after confirmation."""
+    from app.models import ActivityLog
+
     lead = _get_lead_or_404(lead_id)
     lead_name = lead.name
-    # Log before delete; keep orphan-safe by nulling lead_id after message
+    # Preserve audit trail: detach prior lead activities before delete
+    ActivityLog.query.filter_by(lead_id=lead.id).update(
+        {ActivityLog.lead_id: None},
+        synchronize_session=False,
+    )
     log_activity(
         "deleted",
         f"Deleted lead “{lead_name}”",
