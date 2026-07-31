@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('followups.calendar') }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-calendar3"></i> Calendar
+</a>
+<a href="{{ url_for('followups.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-alarm"></i> Schedule Follow-up
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="followup-tabs mb-3">
+  <a href="{{ url_for('followups.index', view='today', type=followup_type, q=q) }}" class="followup-tab {% if view == 'today' %}active{% endif %}">
+    Today's <span class="badge text-bg-light">{{ counts.today }}</span>
+  </a>
+  <a href="{{ url_for('followups.index', view='upcoming', type=followup_type, q=q) }}" class="followup-tab {% if view == 'upcoming' %}active{% endif %}">
+    Upcoming <span class="badge text-bg-light">{{ counts.upcoming }}</span>
+  </a>
+  <a href="{{ url_for('followups.index', view='missed', type=followup_type, q=q) }}" class="followup-tab {% if view == 'missed' %}active{% endif %}">
+    Missed <span class="badge text-bg-danger-subtle">{{ counts.missed }}</span>
+  </a>
+  <a href="{{ url_for('followups.index', view='all', type=followup_type, q=q) }}" class="followup-tab {% if view == 'all' %}active{% endif %}">
+    All <span class="badge text-bg-light">{{ counts.all }}</span>
+  </a>
+</div>
+
+<form class="filter-bar" method="GET">
+  <input type="hidden" name="view" value="{{ view }}">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search title or remarks...">
+  </div>
+  <select name="type" class="form-select">
+    <option value="">All types</option>
+    {% for t in types %}
+    <option value="{{ t }}" {% if followup_type == t %}selected{% endif %}>{{ t }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Filter</button>
+</form>
+
+<div class="panel">
+  {% if followups %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Follow-up</th>
+          <th>Type</th>
+          <th>Reminder</th>
+          <th>Related</th>
+          <th>Assigned</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in followups %}
+        <tr>
+          <td>
+            <a href="{{ url_for('followups.detail', followup_id=item.id) }}" class="fw-semibold">{{ item.title }}</a>
+            {% if item.remarks %}<div class="text-muted small text-truncate" style="max-width:220px;">{{ item.remarks }}</div>{% endif %}
+          </td>
+          <td>
+            <span class="badge type-badge type-{{ item.followup_type|lower }}">
+              <i class="bi bi-{% if item.followup_type == 'Call' %}telephone{% elif item.followup_type == 'Meeting' %}people{% elif item.followup_type == 'WhatsApp' %}whatsapp{% else %}envelope{% endif %}"></i>
+              {{ item.followup_type }}
+            </span>
+          </td>
+          <td>
+            {{ item.reminder_date.strftime('%b %d, %Y') }}
+            <div class="text-muted small">{{ item.reminder_time.strftime('%H:%M') }}</div>
+          </td>
+          <td>{{ item.related_name }}</td>
+          <td>{{ item.assigned_to.full_name if item.assigned_to else '—' }}</td>
+          <td>
+            <span class="badge fu-status status-{{ item.effective_status|lower }}">{{ item.effective_status }}</span>
+          </td>
+          <td class="text-end table-actions">
+            {% if item.status != 'Completed' %}
+            <form method="POST" action="{{ url_for('followups.complete', followup_id=item.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-success" title="Mark completed">
+                <i class="bi bi-check2"></i>
+              </button>
+            </form>
+            {% endif %}
+            <a href="{{ url_for('followups.edit', followup_id=item.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              data-bs-toggle="modal"
+              data-bs-target="#deleteFollowupModal"
+              data-delete-url="{{ url_for('followups.delete', followup_id=item.id) }}"
+              data-followup-title="{{ item.title }}"
+              title="Delete"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">
+    No follow-ups in this view.
+    <a href="{{ url_for('followups.create') }}">Schedule one</a>.
+  </p>
+  {% endif %}
+</div>
+
+<div class="modal fade" id="deleteFollowupModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Delete follow-up?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Delete <strong id="deleteFollowupTitle"></strong>? This cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" id="deleteFollowupForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const modal = document.getElementById("deleteFollowupModal");
+    if (!modal) return;
+    modal.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+      document.getElementById("deleteFollowupForm").setAttribute("action", button.getAttribute("data-delete-url"));
+      document.getElementById("deleteFollowupTitle").textContent = button.getAttribute("data-followup-title");
+    });
+  })();
+</script>
+{% endblock %}
