@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('contacts.create') }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-person-plus"></i> New Contact
+</a>
+{% endblock %}
+
+{% block content %}
+<form class="filter-bar" method="GET">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Search contacts...">
+  </div>
+  <select name="status" class="form-select">
+    <option value="">All statuses</option>
+    {% for s in ['Lead', 'Prospect', 'Customer', 'Inactive'] %}
+    <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Filter</button>
+</form>
+
+<div class="panel">
+  {% if contacts %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Company</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for contact in contacts %}
+        <tr>
+          <td>
+            <a href="{{ url_for('contacts.detail', contact_id=contact.id) }}">{{ contact.full_name }}</a>
+            {% if contact.job_title %}<div class="text-muted small">{{ contact.job_title }}</div>{% endif %}
+          </td>
+          <td>{{ contact.email or '—' }}</td>
+          <td>
+            {% if contact.company %}
+            <a href="{{ url_for('companies.detail', company_id=contact.company.id) }}">{{ contact.company.name }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="badge text-bg-secondary">{{ contact.status }}</span></td>
+          <td class="text-end table-actions">
+            <a href="{{ url_for('contacts.edit', contact_id=contact.id) }}" class="btn btn-sm btn-outline-primary" title="Edit">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="POST" action="{{ url_for('contacts.delete', contact_id=contact.id) }}" class="d-inline" data-confirm="Delete this contact?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty-state">No contacts found. <a href="{{ url_for('contacts.create') }}">Add a contact</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}
