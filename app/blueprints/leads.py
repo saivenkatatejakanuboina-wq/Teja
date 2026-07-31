@@ -134,8 +134,8 @@ def create():
 @leads_bp.route("/<int:lead_id>")
 @login_required
 def detail(lead_id: int):
-    """Lead detail with recent activity log."""
-    from app.models import ActivityLog
+    """Lead detail with recent activity log and email history."""
+    from app.models import ActivityLog, EmailMessage
 
     lead = _get_lead_or_404(lead_id)
     activities = (
@@ -144,10 +144,17 @@ def detail(lead_id: int):
         .limit(20)
         .all()
     )
+    emails = (
+        EmailMessage.query.filter_by(lead_id=lead.id)
+        .order_by(EmailMessage.created_at.desc())
+        .limit(10)
+        .all()
+    )
     return render_template(
         "leads/detail.html",
         lead=lead,
         activities=activities,
+        emails=emails,
         title=lead.name,
     )
 

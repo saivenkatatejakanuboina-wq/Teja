@@ -64,6 +64,11 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Full CSV validation before import (headers, required fields, email, enums)
   - Bootstrap error table when validation fails — nothing imported on error
   - Sample CSV downloads at `/csv`
+- **SMTP Email**
+  - Send email to a lead from a Bootstrap compose window
+  - Email templates with placeholders (`{{name}}`, `{{company}}`, etc.)
+  - Track sent/failed emails and store full email history
+  - Uses SMTP settings from Settings → SMTP
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -110,6 +115,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── admin.py       # Admin Panel
     │   ├── activities.py  # Activity Log
     │   ├── csv_io.py      # CSV Import / Export
+    │   ├── emails.py      # SMTP compose, templates, history
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
@@ -117,12 +123,14 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── activity.py    # Activity log helper
     │   ├── admin_service.py
     │   ├── csv_io.py      # CSV validate / import / export
+    │   ├── email_service.py
     │   ├── reports.py     # Report aggregations
     │   └── settings_service.py
     ├── templates/         # Views (MVC)
     │   ├── admin/         # Admin dashboard, users, roles, history
     │   ├── activities/    # Activity Log table
     │   ├── csv/           # CSV Import / Export UI
+    │   ├── emails/        # Compose, templates, history
     │   └── auth/
     │       ├── login.html
     │       └── register.html

@@ -29,6 +29,7 @@ def create_app(config_name: str | None = None) -> Flask:
     _seed_sample_employee(app)
     _seed_user_permissions(app)
     _seed_settings(app)
+    _seed_email_templates(app)
 
     return app
 
@@ -56,6 +57,7 @@ def _register_blueprints(app: Flask) -> None:
     from app.blueprints.customers import customers_bp
     from app.blueprints.dashboard import dashboard_bp
     from app.blueprints.deals import deals_bp
+    from app.blueprints.emails import emails_bp
     from app.blueprints.followups import followups_bp
     from app.blueprints.leads import leads_bp
     from app.blueprints.reports import reports_bp
@@ -66,6 +68,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(activities_bp)
     app.register_blueprint(csv_bp)
+    app.register_blueprint(emails_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(leads_bp, url_prefix="/leads")
     app.register_blueprint(customers_bp, url_prefix="/customers")
@@ -201,3 +204,15 @@ def _seed_settings(app: Flask) -> None:
         from app.services.settings_service import get_settings
 
         get_settings()
+
+
+def _seed_email_templates(app: Flask) -> None:
+    """Seed starter email templates used by the compose window."""
+    with app.app_context():
+        from app.models import User
+        from app.services.email_service import seed_default_templates
+
+        admin = User.query.filter_by(role="admin").first()
+        created = seed_default_templates(user_id=admin.id if admin else None)
+        if created:
+            app.logger.info("Seeded %s default email template(s)", created)

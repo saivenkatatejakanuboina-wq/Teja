@@ -533,3 +533,48 @@ class CSVImportForm(FlaskForm):
         ],
     )
     submit = SubmitField("Validate & Import")
+
+
+class ComposeEmailForm(FlaskForm):
+    lead_id = SelectField("Lead", coerce=int, validators=[Optional()])
+    template_id = SelectField("Template", coerce=int, validators=[Optional()])
+    to_email = StringField(
+        "To",
+        validators=[
+            DataRequired(message="Recipient email is required."),
+            Email(message="Enter a valid email address."),
+            Length(max=150),
+        ],
+    )
+    subject = StringField(
+        "Subject",
+        validators=[
+            DataRequired(message="Subject is required."),
+            Length(max=255),
+        ],
+    )
+    body = TextAreaField(
+        "Message",
+        validators=[
+            DataRequired(message="Message body is required."),
+            Length(max=20000),
+        ],
+    )
+    submit = SubmitField("Send Email")
+
+
+class EmailTemplateForm(FlaskForm):
+    name = StringField(
+        "Template Name",
+        validators=[DataRequired(message="Name is required."), Length(max=120)],
+    )
+    subject = StringField(
+        "Subject",
+        validators=[DataRequired(message="Subject is required."), Length(max=255)],
+    )
+    body = TextAreaField(
+        "Body",
+        validators=[DataRequired(message="Body is required."), Length(max=20000)],
+    )
+    is_active = BooleanField("Active", default=True)
+    submit = SubmitField("Save Template")

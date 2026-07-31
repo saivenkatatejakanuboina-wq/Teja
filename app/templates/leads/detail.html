@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 
 {% block topbar_actions %}
+{% if lead.email %}
+<a href="{{ url_for('emails.compose', lead_id=lead.id) }}" class="btn btn-outline-primary btn-sm">
+  <i class="bi bi-envelope"></i> Send Email
+</a>
+{% endif %}
 {% if lead.is_converted %}
 <a href="{{ url_for('customers.detail', customer_id=lead.customer.id) }}" class="btn btn-success btn-sm">
   <i class="bi bi-person-badge"></i> View Customer
@@ -85,6 +90,52 @@
   </div>
 
   <div class="col-lg-5">
+    <div class="panel mb-4">
+      <div class="panel-header d-flex justify-content-between align-items-center">
+        <h2>Email History</h2>
+        {% if lead.email %}
+        <a href="{{ url_for('emails.compose', lead_id=lead.id) }}" class="btn btn-sm btn-outline-primary">Compose</a>
+        {% endif %}
+      </div>
+      {% if emails %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for msg in emails %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ msg.subject }}</div>
+                <div class="text-muted small">{{ msg.created_at.strftime('%b %d, %H:%M') }}</div>
+              </td>
+              <td>
+                {% if msg.status == 'sent' %}
+                <span class="badge text-bg-success">Sent</span>
+                {% elif msg.status == 'failed' %}
+                <span class="badge text-bg-danger">Failed</span>
+                {% else %}
+                <span class="badge text-bg-secondary">{{ msg.status_label }}</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <a href="{{ url_for('emails.detail', message_id=msg.id) }}" class="btn btn-sm btn-link">View</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="empty-state mb-0">No emails sent to this lead yet.</p>
+      {% endif %}
+    </div>
+
     <div class="panel">
       <div class="panel-header">
         <h2>Activity Log</h2>
@@ -93,8 +144,8 @@
       <ul class="activity-feed">
         {% for item in activities %}
         <li>
-          <div class="activity-icon tone-{% if item.action == 'created' %}success{% elif item.action == 'deleted' %}danger{% elif item.action == 'updated' %}primary{% else %}secondary{% endif %}">
-            <i class="bi bi-{% if item.action == 'created' %}plus-lg{% elif item.action == 'deleted' %}trash{% elif item.action == 'updated' %}pencil{% else %}clock-history{% endif %}"></i>
+          <div class="activity-icon tone-{% if item.action == 'created' or item.action == 'email_sent' %}success{% elif item.action == 'deleted' or item.action == 'email_failed' %}danger{% elif item.action == 'updated' %}primary{% else %}secondary{% endif %}">
+            <i class="bi bi-{% if item.action == 'created' %}plus-lg{% elif item.action == 'deleted' %}trash{% elif item.action == 'updated' %}pencil{% elif item.action == 'email_sent' %}envelope-check{% elif item.action == 'email_failed' %}envelope-x{% else %}clock-history{% endif %}"></i>
           </div>
           <div class="activity-body">
             <strong>{{ item.message }}</strong>

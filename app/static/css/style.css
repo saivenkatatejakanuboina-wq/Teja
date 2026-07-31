@@ -1044,3 +1044,45 @@ html[data-theme="dark"] .dropdown-item:hover {
     height: 220px;
   }
 }
+
+/* ----- Email compose window ----- */
+.compose-window {
+  border: 1px solid var(--border, #dfe3ea);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.compose-window-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.compose-window-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.compose-body,
+.email-body-view {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.email-body-view {
+  white-space: pre-wrap;
+  background: var(--panel-soft, #f8fafc);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 0.5rem;
+  padding: 1rem 1.1rem;
+  margin: 0;
+}

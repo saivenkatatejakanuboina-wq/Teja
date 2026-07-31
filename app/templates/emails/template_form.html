@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Use placeholders such as {{ '{{name}}' }}, {{ '{{company}}' }}, {{ '{{sender_name}}' }}, {{ '{{company_name}}' }}.</p>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="panel">
+      <div class="panel-header"><h2>{{ title }}</h2></div>
+      <form method="POST" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+          {{ form.name.label(class='form-label') }}
+          {{ form.name(class='form-control' + (' is-invalid' if form.name.errors else '')) }}
+          {% for error in form.name.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.subject.label(class='form-label') }}
+          {{ form.subject(class='form-control' + (' is-invalid' if form.subject.errors else '')) }}
+          {% for error in form.subject.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+          {{ form.body.label(class='form-label') }}
+          {{ form.body(class='form-control compose-body' + (' is-invalid' if form.body.errors else ''), rows=12) }}
+          {% for error in form.body.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+        <div class="form-check mb-4">
+          {{ form.is_active(class='form-check-input') }}
+          {{ form.is_active.label(class='form-check-label') }}
+        </div>
+        <div class="d-flex gap-2">
+          {{ form.submit(class='btn btn-primary') }}
+          <a href="{{ url_for('emails.templates') }}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

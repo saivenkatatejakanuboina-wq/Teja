@@ -195,6 +195,17 @@ class User(UserMixin, db.Model):
         lazy="dynamic",
         cascade="all, delete-orphan",
     )
+    sent_emails = db.relationship(
+        "EmailMessage",
+        back_populates="sent_by",
+        lazy="dynamic",
+        foreign_keys="EmailMessage.sent_by_id",
+    )
+    email_templates = db.relationship(
+        "EmailTemplate",
+        back_populates="created_by",
+        lazy="dynamic",
+    )
 
     def set_password(self, password: str) -> None:
         """Hash and store the user's password."""
@@ -424,6 +435,12 @@ class Lead(db.Model):
         back_populates="source_lead",
         uselist=False,
     )
+    emails = db.relationship(
+        "EmailMessage",
+        back_populates="lead",
+        lazy="dynamic",
+        foreign_keys="EmailMessage.lead_id",
+    )
 
     @property
     def is_converted(self) -> bool:
@@ -602,6 +619,8 @@ ACTIVITY_LABELS = {
     ("updated", "lead"): "Lead Updated",
     ("deleted", "lead"): "Lead Deleted",
     ("imported", "lead"): "Leads Imported",
+    ("email_sent", "lead"): "Email Sent",
+    ("email_failed", "lead"): "Email Failed",
     ("created", "customer"): "Customer Created",
     ("updated", "customer"): "Customer Updated",
     ("deleted", "customer"): "Customer Deleted",
@@ -703,3 +722,71 @@ class AppSettings(db.Model):
 
     def __repr__(self) -> str:
         return f"<AppSettings {self.company_name}>"
+
+
+EMAIL_STATUSES = ("queued", "sent", "failed")
+
+
+class EmailTemplate(db.Model):
+    """Reusable email template for lead outreach."""
+
+    __tablename__ = "email_templates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False, unique=True, index=True)
+    subject = db.Column(db.String(255), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    created_by = db.relationship("User", back_populates="email_templates")
+    messages = db.relationship("EmailMessage", back_populates="template", lazy="dynamic")
+
+    def __repr__(self) -> str:
+        return f"<EmailTemplate {self.name}>"
+
+
+class EmailMessage(db.Model):
+    """Stored history of emails sent (or attempted) to leads."""
+
+    __tablename__ = "email_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    to_email = db.Column(db.String(150), nullable=False, index=True)
+    to_name = db.Column(db.String(150))
+    from_email = db.Column(db.String(150))
+    subject = db.Column(db.String(255), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default="queued", nullable=False, index=True)
+    error_message = db.Column(db.Text)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id", ondelete="SET NULL"), index=True)
+    template_id = db.Column(db.Integer, db.ForeignKey("email_templates.id", ondelete="SET NULL"))
+    sent_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    sent_at = db.Column(db.DateTime)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True
+    )
+
+    lead = db.relationship("Lead", back_populates="emails", foreign_keys=[lead_id])
+    template = db.relationship("EmailTemplate", back_populates="messages")
+    sent_by = db.relationship(
+        "User",
+        back_populates="sent_emails",
+        foreign_keys=[sent_by_id],
+    )
+
+    @property
+    def status_label(self) -> str:
+        return self.status.title()
+
+    def __repr__(self) -> str:
+        return f"<EmailMessage {self.id} {self.status}>"

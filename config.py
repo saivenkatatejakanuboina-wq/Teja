@@ -33,6 +33,14 @@ class Config:
     ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "admin@minicrm.local")
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
 
+    # When true, emails are stored in history without calling SMTP (useful for demos/tests)
+    MAIL_SUPPRESS_SEND = os.getenv("MAIL_SUPPRESS_SEND", "false").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
 
 class DevelopmentConfig(Config):
     DEBUG = True

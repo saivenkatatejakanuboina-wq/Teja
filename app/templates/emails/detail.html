@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block page_subtitle %}
+<p class="page-subtitle mb-0">Stored email history record.</p>
+{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('emails.index') }}" class="btn btn-outline-secondary btn-sm">Back to history</a>
+{% if message.lead %}
+<a href="{{ url_for('emails.compose', lead_id=message.lead.id) }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-reply"></i> Compose again
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="panel compose-window">
+      <div class="compose-window-header">
+        <h2 class="mb-0">{{ message.subject }}</h2>
+        {% if message.status == 'sent' %}
+        <span class="badge text-bg-success">Sent</span>
+        {% elif message.status == 'failed' %}
+        <span class="badge text-bg-danger">Failed</span>
+        {% else %}
+        <span class="badge text-bg-secondary">{{ message.status_label }}</span>
+        {% endif %}
+      </div>
+      <dl class="detail-grid mb-4">
+        <div>
+          <dt>To</dt>
+          <dd>{{ message.to_name or '—' }} &lt;{{ message.to_email }}&gt;</dd>
+        </div>
+        <div>
+          <dt>From</dt>
+          <dd>{{ message.from_email or '—' }}</dd>
+        </div>
+        <div>
+          <dt>Lead</dt>
+          <dd>
+            {% if message.lead %}
+            <a href="{{ url_for('leads.detail', lead_id=message.lead.id) }}">{{ message.lead.name }}</a>
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt>Template</dt>
+          <dd>{{ message.template.name if message.template else '—' }}</dd>
+        </div>
+        <div>
+          <dt>Sent By</dt>
+          <dd>{{ message.sent_by.full_name if message.sent_by else '—' }}</dd>
+        </div>
+        <div>
+          <dt>Created</dt>
+          <dd>{{ message.created_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC</dd>
+        </div>
+      </dl>
+      {% if message.error_message %}
+      <div class="alert alert-danger">{{ message.error_message }}</div>
+      {% endif %}
+      <h3 class="h6 text-uppercase text-muted">Message</h3>
+      <pre class="email-body-view">{{ message.body }}</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}
