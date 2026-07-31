@@ -33,6 +33,9 @@
         <a href="{{ url_for('customers.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('customers.') %}active{% endif %}">
           <i class="bi bi-person-badge"></i> <span>Customers</span>
         </a>
+        <a href="{{ url_for('followups.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('followups.') %}active{% endif %}">
+          <i class="bi bi-alarm"></i> <span>Follow-ups</span>
+        </a>
         <a href="{{ url_for('contacts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
           <i class="bi bi-people"></i> <span>Contacts</span>
         </a>
@@ -49,8 +52,8 @@
         <a href="{{ url_for('leads.create') }}" class="nav-link">
           <i class="bi bi-person-plus"></i> <span>Add Lead</span>
         </a>
-        <a href="{{ url_for('deals.create') }}" class="nav-link">
-          <i class="bi bi-plus-circle"></i> <span>New Deal</span>
+        <a href="{{ url_for('followups.create') }}" class="nav-link">
+          <i class="bi bi-alarm"></i> <span>Schedule Follow-up</span>
         </a>
       </nav>
 

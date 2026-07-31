@@ -31,6 +31,11 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Address, GST, Website, Industry, Primary Contact, Notes
   - Customer list / details with CRUD
   - Search, pagination, responsive UI
+- **Follow-up Management**
+  - Schedule Call / Meeting / WhatsApp / Email
+  - Reminder date & time, status, remarks
+  - Today's / Upcoming / Missed buckets
+  - Bootstrap month calendar view
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -70,6 +75,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── dashboard.py
     │   ├── leads.py       # Lead Management
     │   ├── customers.py   # Customer Management
+    │   ├── followups.py   # Follow-up Management
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
@@ -172,6 +178,7 @@ Override the default admin via `.env` (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_P
 | Dashboard  | `/`           | Stats, charts, recent activities                 |
 | Leads      | `/leads`      | Lead management with search, filters, activity   |
 | Customers  | `/customers`  | Customers + convert from leads                   |
+| Follow-ups | `/followups`  | Schedule reminders + calendar                    |
 | Contacts   | `/contacts`   | People linked to companies                       |
 | Companies  | `/companies`  | Organizations you work with                       |
 | Deals      | `/deals`      | Sales opportunities with stages & values         |

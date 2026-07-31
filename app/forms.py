@@ -11,6 +11,7 @@ from wtforms import (
     StringField,
     SubmitField,
     TextAreaField,
+    TimeField,
 )
 from wtforms.validators import (
     DataRequired,
@@ -22,7 +23,14 @@ from wtforms.validators import (
     ValidationError,
 )
 
-from app.models import DEAL_STAGES, LEAD_SOURCES, LEAD_STATUSES, User
+from app.models import (
+    DEAL_STAGES,
+    FOLLOWUP_STATUSES,
+    FOLLOWUP_TYPES,
+    LEAD_SOURCES,
+    LEAD_STATUSES,
+    User,
+)
 
 CONTACT_STATUSES = [
     ("Lead", "Lead"),
@@ -217,3 +225,43 @@ class LeadForm(FlaskForm):
     )
     notes = TextAreaField("Notes", validators=[Optional(), Length(max=5000)])
     submit = SubmitField("Save Lead")
+
+
+class FollowUpForm(FlaskForm):
+    title = StringField(
+        "Title",
+        validators=[
+            DataRequired(message="Title is required."),
+            Length(max=150),
+        ],
+    )
+    followup_type = SelectField(
+        "Type",
+        choices=[(t, t) for t in FOLLOWUP_TYPES],
+        validators=[DataRequired(message="Follow-up type is required.")],
+    )
+    reminder_date = DateField(
+        "Reminder Date",
+        validators=[DataRequired(message="Reminder date is required.")],
+        format="%Y-%m-%d",
+    )
+    reminder_time = TimeField(
+        "Reminder Time",
+        validators=[DataRequired(message="Reminder time is required.")],
+        format="%H:%M",
+    )
+    status = SelectField(
+        "Status",
+        choices=[(s, s) for s in FOLLOWUP_STATUSES],
+        validators=[DataRequired()],
+        default="Scheduled",
+    )
+    assigned_to_id = SelectField(
+        "Assigned Employee",
+        coerce=int,
+        validators=[DataRequired(message="Please assign an employee.")],
+    )
+    lead_id = SelectField("Related Lead", coerce=int, validators=[Optional()])
+    customer_id = SelectField("Related Customer", coerce=int, validators=[Optional()])
+    remarks = TextAreaField("Remarks", validators=[Optional(), Length(max=5000)])
+    submit = SubmitField("Save Follow-up")

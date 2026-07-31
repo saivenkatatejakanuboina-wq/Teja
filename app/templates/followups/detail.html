@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block topbar_actions %}
+{% if followup.status != 'Completed' %}
+<form method="POST" action="{{ url_for('followups.complete', followup_id=followup.id) }}" class="d-inline">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn btn-success btn-sm">
+    <i class="bi bi-check2-circle"></i> Mark Completed
+  </button>
+</form>
+{% endif %}
+<a href="{{ url_for('followups.edit', followup_id=followup.id) }}" class="btn btn-primary btn-sm">
+  <i class="bi bi-pencil"></i> Edit
+</a>
+<button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteFollowupModal">
+  <i class="bi bi-trash"></i> Delete
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="detail-header">
+    <div>
+      <h2>{{ followup.title }}</h2>
+      <p class="text-muted mb-0">
+        {{ followup.followup_type }} · {{ followup.reminder_date.strftime('%b %d, %Y') }} at {{ followup.reminder_time.strftime('%H:%M') }}
+      </p>
+    </div>
+    <span class="badge fu-status status-{{ followup.effective_status|lower }} fs-6">{{ followup.effective_status }}</span>
+  </div>
+
+  <dl class="detail-grid">
+    <div>
+      <dt>Type</dt>
+      <dd>
+        <span class="badge type-badge type-{{ followup.followup_type|lower }}">{{ followup.followup_type }}</span>
+      </dd>
+    </div>
+    <div>
+      <dt>Reminder</dt>
+      <dd>{{ followup.reminder_date.strftime('%b %d, %Y') }} · {{ followup.reminder_time.strftime('%H:%M') }}</dd>
+    </div>
+    <div>
+      <dt>Assigned Employee</dt>
+      <dd>{{ followup.assigned_to.full_name if followup.assigned_to else '—' }}</dd>
+    </div>
+    <div>
+      <dt>Created By</dt>
+      <dd>{{ followup.created_by.full_name if followup.created_by else '—' }}</dd>
+    </div>
+    <div>
+      <dt>Related Lead</dt>
+      <dd>
+        {% if followup.lead %}
+        <a href="{{ url_for('leads.detail', lead_id=followup.lead.id) }}">{{ followup.lead.name }}</a>
+        {% else %}—{% endif %}
+      </dd>
+    </div>
+    <div>
+      <dt>Related Customer</dt>
+      <dd>
+        {% if followup.customer %}
+        <a href="{{ url_for('customers.detail', customer_id=followup.customer.id) }}">{{ followup.customer.name }}</a>
+        {% else %}—{% endif %}
+      </dd>
+    </div>
+  </dl>
+
+  {% if followup.remarks %}
+  <div class="mt-3">
+    <h3 class="h6 text-uppercase text-muted">Remarks</h3>
+    <p class="mb-0" style="white-space: pre-wrap;">{{ followup.remarks }}</p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="modal fade" id="deleteFollowupModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5">Delete follow-up?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Delete <strong>{{ followup.title }}</strong>?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" action="{{ url_for('followups.delete', followup_id=followup.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

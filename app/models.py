@@ -41,6 +41,20 @@ LEAD_SOURCES = (
     "Other",
 )
 
+FOLLOWUP_TYPES = (
+    "Call",
+    "Meeting",
+    "WhatsApp",
+    "Email",
+)
+
+FOLLOWUP_STATUSES = (
+    "Scheduled",
+    "Completed",
+    "Missed",
+    "Cancelled",
+)
+
 
 class User(UserMixin, db.Model):
     """Authenticated user with Admin or Employee role."""
@@ -62,6 +76,18 @@ class User(UserMixin, db.Model):
     companies = db.relationship("Company", back_populates="owner", lazy="dynamic")
     deals = db.relationship("Deal", back_populates="owner", lazy="dynamic")
     customers = db.relationship("Customer", back_populates="owner", lazy="dynamic")
+    followups = db.relationship(
+        "FollowUp",
+        back_populates="assigned_to",
+        foreign_keys="FollowUp.assigned_to_id",
+        lazy="dynamic",
+    )
+    created_followups = db.relationship(
+        "FollowUp",
+        back_populates="created_by",
+        foreign_keys="FollowUp.created_by_id",
+        lazy="dynamic",
+    )
     created_leads = db.relationship(
         "Lead",
         back_populates="created_by",
@@ -297,6 +323,73 @@ class Customer(db.Model):
 
     def __repr__(self) -> str:
         return f"<Customer {self.name}>"
+
+
+class FollowUp(db.Model):
+    """Scheduled follow-up (call, meeting, WhatsApp, email)."""
+
+    __tablename__ = "followups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False, index=True)
+    followup_type = db.Column(db.String(40), nullable=False, default="Call", index=True)
+    reminder_date = db.Column(db.Date, nullable=False, index=True)
+    reminder_time = db.Column(db.Time, nullable=False)
+    status = db.Column(db.String(40), default="Scheduled", nullable=False, index=True)
+    remarks = db.Column(db.Text)
+    lead_id = db.Column(db.Integer, db.ForeignKey("leads.id"))
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id"))
+    assigned_to_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_by_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    lead = db.relationship("Lead", backref=db.backref("followups", lazy="dynamic"))
+    customer = db.relationship("Customer", backref=db.backref("followups", lazy="dynamic"))
+    assigned_to = db.relationship(
+        "User",
+        foreign_keys=[assigned_to_id],
+        back_populates="followups",
+    )
+    created_by = db.relationship(
+        "User",
+        foreign_keys=[created_by_id],
+        back_populates="created_followups",
+    )
+
+    @property
+    def reminder_datetime(self) -> datetime:
+        return datetime.combine(self.reminder_date, self.reminder_time)
+
+    @property
+    def is_overdue(self) -> bool:
+        if self.status in ("Completed", "Cancelled"):
+            return False
+        return self.reminder_datetime < datetime.now()
+
+    @property
+    def effective_status(self) -> str:
+        if self.status == "Scheduled" and self.is_overdue:
+            return "Missed"
+        return self.status
+
+    @property
+    def related_name(self) -> str:
+        if self.customer:
+            return self.customer.name
+        if self.lead:
+            return self.lead.name
+        return "—"
+
+    def __repr__(self) -> str:
+        return f"<FollowUp {self.title}>"
 
 
 class ActivityLog(db.Model):
