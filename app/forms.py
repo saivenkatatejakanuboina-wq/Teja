@@ -1,6 +1,7 @@
 """WTForms for the Mini CRM — includes auth form validation."""
 
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileField
 from wtforms import (
     BooleanField,
     DateField,
@@ -24,6 +25,7 @@ from wtforms.validators import (
 )
 
 from app.models import (
+    CURRENCY_OPTIONS,
     DEAL_STAGES,
     FOLLOWUP_STATUSES,
     FOLLOWUP_TYPES,
@@ -31,6 +33,8 @@ from app.models import (
     LEAD_STATUSES,
     TASK_PRIORITIES,
     TASK_STATUSES,
+    THEME_OPTIONS,
+    TIMEZONE_OPTIONS,
     User,
 )
 
@@ -306,3 +310,127 @@ class TaskForm(FlaskForm):
         format="%Y-%m-%d",
     )
     submit = SubmitField("Save Task")
+
+
+class CompanySettingsForm(FlaskForm):
+    company_name = StringField(
+        "Company Name",
+        validators=[DataRequired(message="Company name is required."), Length(max=150)],
+    )
+    logo = FileField(
+        "Company Logo",
+        validators=[
+            Optional(),
+            FileAllowed(
+                ["png", "jpg", "jpeg", "gif", "webp", "svg"],
+                "Images only (png, jpg, gif, webp, svg).",
+            ),
+        ],
+    )
+    timezone = SelectField(
+        "Timezone",
+        choices=[(tz, tz) for tz in TIMEZONE_OPTIONS],
+        validators=[DataRequired()],
+    )
+    currency = SelectField(
+        "Currency",
+        choices=list(CURRENCY_OPTIONS),
+        validators=[DataRequired()],
+    )
+    submit = SubmitField("Save Company Settings")
+
+
+class SMTPSettingsForm(FlaskForm):
+    smtp_host = StringField("SMTP Host", validators=[Optional(), Length(max=150)])
+    smtp_port = IntegerField(
+        "SMTP Port",
+        validators=[Optional(), NumberRange(min=1, max=65535)],
+        default=587,
+    )
+    smtp_username = StringField("SMTP Username", validators=[Optional(), Length(max=150)])
+    smtp_password = PasswordField("SMTP Password", validators=[Optional(), Length(max=255)])
+    smtp_from_email = StringField(
+        "From Email",
+        validators=[Optional(), Email(), Length(max=150)],
+    )
+    smtp_use_tls = BooleanField("Use TLS", default=True)
+    submit = SubmitField("Save SMTP Settings")
+
+
+class ThemeSettingsForm(FlaskForm):
+    theme = SelectField(
+        "Theme",
+        choices=[(t, t.title()) for t in THEME_OPTIONS],
+        validators=[DataRequired()],
+    )
+    submit = SubmitField("Save Theme")
+
+
+class ProfileForm(FlaskForm):
+    full_name = StringField(
+        "Full Name",
+        validators=[DataRequired(message="Full name is required."), Length(max=120)],
+    )
+    email = StringField(
+        "Email",
+        validators=[
+            DataRequired(message="Email is required."),
+            Email(message="Enter a valid email address."),
+            Length(max=120),
+        ],
+    )
+    username = StringField(
+        "Username",
+        validators=[
+            DataRequired(message="Username is required."),
+            Length(min=3, max=80),
+        ],
+    )
+    submit = SubmitField("Update Profile")
+
+    def __init__(self, original_user=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.original_user = original_user
+
+    def validate_username(self, field):
+        user = User.query.filter_by(username=field.data.strip()).first()
+        if user and (self.original_user is None or user.id != self.original_user.id):
+            raise ValidationError("Username is already taken.")
+
+    def validate_email(self, field):
+        user = User.query.filter_by(email=field.data.strip().lower()).first()
+        if user and (self.original_user is None or user.id != self.original_user.id):
+            raise ValidationError("Email is already registered.")
+
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField(
+        "Current Password",
+        validators=[DataRequired(message="Current password is required.")],
+    )
+    new_password = PasswordField(
+        "New Password",
+        validators=[
+            DataRequired(message="New password is required."),
+            Length(min=6, message="Password must be at least 6 characters."),
+        ],
+    )
+    confirm_password = PasswordField(
+        "Confirm New Password",
+        validators=[
+            DataRequired(message="Please confirm the new password."),
+            EqualTo("new_password", message="Passwords must match."),
+        ],
+    )
+    submit = SubmitField("Change Password")
+
+
+class RestoreDatabaseForm(FlaskForm):
+    backup_file = FileField(
+        "Backup File (.db)",
+        validators=[
+            DataRequired(message="Please choose a database backup file."),
+            FileAllowed(["db", "sqlite"], "SQLite database files only (.db)."),
+        ],
+    )
+    submit = SubmitField("Restore Database")

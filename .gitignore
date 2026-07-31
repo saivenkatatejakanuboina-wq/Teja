@@ -33,3 +33,9 @@ htmlcov/
 
 # Flask
 instance/
+
+# Uploads & backups (keep folder placeholders)
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+backups/*
+!backups/.gitkeep

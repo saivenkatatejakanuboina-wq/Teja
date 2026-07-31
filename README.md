@@ -43,6 +43,11 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
 - **Reports**
   - Chart.js: Monthly Leads, Lead Sources, Won vs Lost, Employee Performance, Customer Growth
   - Export each report to CSV
+- **Settings**
+  - Company name, logo upload, timezone, currency
+  - SMTP settings, theme (light/dark/ocean)
+  - Database backup & restore
+  - Profile update & password change
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -85,6 +90,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── followups.py   # Follow-up Management
     │   ├── tasks.py       # Task Management
     │   ├── reports.py     # Reports + CSV export
+    │   ├── settings.py    # Settings module
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
@@ -191,6 +197,7 @@ Override the default admin via `.env` (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_P
 | Follow-ups | `/followups`  | Schedule reminders + calendar                    |
 | Tasks      | `/tasks`      | Task list + `/tasks/dashboard`                   |
 | Reports    | `/reports`    | Charts + CSV export                              |
+| Settings   | `/settings`   | Company, SMTP, theme, backup, profile            |
 | Contacts   | `/contacts`   | People linked to companies                       |
 | Companies  | `/companies`  | Organizations you work with                       |
 | Deals      | `/deals`      | Sales opportunities with stages & values         |

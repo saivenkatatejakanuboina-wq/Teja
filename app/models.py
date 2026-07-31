@@ -70,6 +70,34 @@ TASK_STATUSES = (
     "Cancelled",
 )
 
+THEME_OPTIONS = (
+    "light",
+    "dark",
+    "ocean",
+)
+
+CURRENCY_OPTIONS = (
+    ("USD", "USD — US Dollar"),
+    ("EUR", "EUR — Euro"),
+    ("GBP", "GBP — British Pound"),
+    ("INR", "INR — Indian Rupee"),
+    ("AED", "AED — UAE Dirham"),
+    ("AUD", "AUD — Australian Dollar"),
+)
+
+TIMEZONE_OPTIONS = (
+    "UTC",
+    "America/New_York",
+    "America/Chicago",
+    "America/Los_Angeles",
+    "Europe/London",
+    "Europe/Berlin",
+    "Asia/Kolkata",
+    "Asia/Dubai",
+    "Asia/Singapore",
+    "Australia/Sydney",
+)
+
 
 class User(UserMixin, db.Model):
     """Authenticated user with Admin or Employee role."""
@@ -498,3 +526,33 @@ class ActivityLog(db.Model):
 
     def __repr__(self) -> str:
         return f"<ActivityLog {self.action} #{self.id}>"
+
+
+class AppSettings(db.Model):
+    """Singleton application settings (company, SMTP, theme, etc.)."""
+
+    __tablename__ = "app_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    company_name = db.Column(db.String(150), default="Mini CRM", nullable=False)
+    logo_filename = db.Column(db.String(255))
+    timezone = db.Column(db.String(80), default="UTC", nullable=False)
+    currency = db.Column(db.String(10), default="USD", nullable=False)
+    theme = db.Column(db.String(20), default="light", nullable=False)
+
+    smtp_host = db.Column(db.String(150))
+    smtp_port = db.Column(db.Integer, default=587)
+    smtp_username = db.Column(db.String(150))
+    smtp_password = db.Column(db.String(255))
+    smtp_use_tls = db.Column(db.Boolean, default=True, nullable=False)
+    smtp_from_email = db.Column(db.String(150))
+
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    def __repr__(self) -> str:
+        return f"<AppSettings {self.company_name}>"
