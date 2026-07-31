@@ -14,7 +14,12 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Protected routes (`@login_required`, `@admin_required`)
   - Bootstrap login & register pages with flash messages and form validation
   - Redirect to dashboard after login
-- Dashboard with pipeline stats and recent activity
+- **Professional CRM dashboard**
+  - KPI cards: Total Leads, Today's Leads, Customers, Follow-ups Today, Won/Lost Deals
+  - Sidebar + navbar with profile dropdown
+  - Responsive Bootstrap layout
+  - Chart.js charts (lead trend, outcomes, pipeline, revenue)
+  - Recent activities feed (demo data)
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
