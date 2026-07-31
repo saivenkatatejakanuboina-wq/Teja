@@ -40,6 +40,9 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Create tasks, assign employees, priority & status
   - Due date / completed date
   - Search, filters, task dashboard, color badges
+- **Reports**
+  - Chart.js: Monthly Leads, Lead Sources, Won vs Lost, Employee Performance, Customer Growth
+  - Export each report to CSV
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -81,11 +84,13 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── customers.py   # Customer Management
     │   ├── followups.py   # Follow-up Management
     │   ├── tasks.py       # Task Management
+    │   ├── reports.py     # Reports + CSV export
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
     ├── services/
-    │   └── activity.py    # Activity log helper
+    │   ├── activity.py    # Activity log helper
+    │   └── reports.py     # Report aggregations
     ├── templates/         # Views (MVC)
     │   └── auth/
     │       ├── login.html
@@ -185,6 +190,7 @@ Override the default admin via `.env` (`ADMIN_USERNAME`, `ADMIN_EMAIL`, `ADMIN_P
 | Customers  | `/customers`  | Customers + convert from leads                   |
 | Follow-ups | `/followups`  | Schedule reminders + calendar                    |
 | Tasks      | `/tasks`      | Task list + `/tasks/dashboard`                   |
+| Reports    | `/reports`    | Charts + CSV export                              |
 | Contacts   | `/contacts`   | People linked to companies                       |
 | Companies  | `/companies`  | Organizations you work with                       |
 | Deals      | `/deals`      | Sales opportunities with stages & values         |

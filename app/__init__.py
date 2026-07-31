@@ -47,6 +47,7 @@ def _register_blueprints(app: Flask) -> None:
     from app.blueprints.deals import deals_bp
     from app.blueprints.followups import followups_bp
     from app.blueprints.leads import leads_bp
+    from app.blueprints.reports import reports_bp
     from app.blueprints.tasks import tasks_bp
 
     app.register_blueprint(auth_bp)
@@ -55,6 +56,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(followups_bp, url_prefix="/followups")
     app.register_blueprint(tasks_bp, url_prefix="/tasks")
+    app.register_blueprint(reports_bp, url_prefix="/reports")
     app.register_blueprint(companies_bp, url_prefix="/companies")
     app.register_blueprint(contacts_bp, url_prefix="/contacts")
     app.register_blueprint(deals_bp, url_prefix="/deals")

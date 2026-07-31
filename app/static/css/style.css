@@ -408,6 +408,10 @@ a:hover {
   height: 240px;
 }
 
+.chart-wrap-lg {
+  height: 320px;
+}
+
 /* ===== Activity feed ===== */
 .activity-feed {
   list-style: none;
