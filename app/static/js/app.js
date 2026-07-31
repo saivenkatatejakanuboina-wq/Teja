@@ -4,23 +4,34 @@
 (function () {
   "use strict";
 
-  // Mobile sidebar toggle
   const toggle = document.getElementById("sidebarToggle");
-  const sidebar = document.querySelector(".sidebar");
+  const sidebar = document.getElementById("appSidebar") || document.querySelector(".sidebar");
+  const backdrop = document.getElementById("sidebarBackdrop");
+
+  function closeSidebar() {
+    if (!sidebar) return;
+    sidebar.classList.remove("open");
+    if (backdrop) backdrop.classList.remove("show");
+  }
+
+  function openSidebar() {
+    if (!sidebar) return;
+    sidebar.classList.add("open");
+    if (backdrop) backdrop.classList.add("show");
+  }
+
   if (toggle && sidebar) {
     toggle.addEventListener("click", function () {
-      sidebar.classList.toggle("open");
-    });
-
-    document.addEventListener("click", function (event) {
-      if (
-        sidebar.classList.contains("open") &&
-        !sidebar.contains(event.target) &&
-        !toggle.contains(event.target)
-      ) {
-        sidebar.classList.remove("open");
+      if (sidebar.classList.contains("open")) {
+        closeSidebar();
+      } else {
+        openSidebar();
       }
     });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener("click", closeSidebar);
   }
 
   // Confirm destructive actions

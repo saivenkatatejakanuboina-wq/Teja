@@ -12,47 +12,113 @@
 <body>
   {% if current_user.is_authenticated %}
   <div class="app-shell">
-    <aside class="sidebar">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="appSidebar">
       <div class="sidebar-brand">
-        <i class="bi bi-briefcase-fill"></i>
-        <span>Mini CRM</span>
+        <div class="brand-mark"><i class="bi bi-briefcase-fill"></i></div>
+        <div>
+          <span class="brand-name">Mini CRM</span>
+          <small class="brand-tag">Sales Workspace</small>
+        </div>
       </div>
+
+      <div class="sidebar-section-label">Main</div>
       <nav class="sidebar-nav">
         <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
-          <i class="bi bi-speedometer2"></i> Dashboard
+          <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('leads.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('leads.') %}active{% endif %}">
+          <i class="bi bi-funnel"></i> <span>Leads</span>
         </a>
         <a href="{{ url_for('contacts.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('contacts.') %}active{% endif %}">
-          <i class="bi bi-people"></i> Contacts
+          <i class="bi bi-people"></i> <span>Contacts</span>
         </a>
         <a href="{{ url_for('companies.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('companies.') %}active{% endif %}">
-          <i class="bi bi-building"></i> Companies
+          <i class="bi bi-building"></i> <span>Companies</span>
         </a>
         <a href="{{ url_for('deals.index') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('deals.') %}active{% endif %}">
-          <i class="bi bi-graph-up-arrow"></i> Deals
+          <i class="bi bi-graph-up-arrow"></i> <span>Deals</span>
         </a>
       </nav>
-      <div class="sidebar-footer">
-        <div class="user-chip">
-          <i class="bi bi-person-circle"></i>
-          <div>
-            <strong>{{ current_user.full_name }}</strong>
-            <small>@{{ current_user.username }}</small>
-          </div>
-        </div>
-        <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-sm w-100 mt-2">
-          <i class="bi bi-box-arrow-right"></i> Sign Out
+
+      <div class="sidebar-section-label">Shortcuts</div>
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('leads.create') }}" class="nav-link">
+          <i class="bi bi-person-plus"></i> <span>Add Lead</span>
         </a>
+        <a href="{{ url_for('deals.create') }}" class="nav-link">
+          <i class="bi bi-plus-circle"></i> <span>New Deal</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-role-badge">{{ current_user.role_label }}</div>
+        <div class="text-white-50 small px-2">Signed in as <strong class="text-white">{{ current_user.username }}</strong></div>
       </div>
     </aside>
 
+    <div class="sidebar-backdrop d-lg-none" id="sidebarBackdrop"></div>
+
     <div class="main-area">
-      <header class="topbar">
-        <button class="btn btn-light d-lg-none" type="button" id="sidebarToggle" aria-label="Toggle menu">
-          <i class="bi bi-list"></i>
-        </button>
-        <h1 class="page-title">{% block page_title %}{{ title or 'Mini CRM' }}{% endblock %}</h1>
-        <div class="topbar-actions">
+      <!-- Top Navbar -->
+      <header class="topbar navbar navbar-expand">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          <button class="btn btn-light border d-lg-none" type="button" id="sidebarToggle" aria-label="Toggle menu">
+            <i class="bi bi-list fs-5"></i>
+          </button>
+          <div>
+            <h1 class="page-title mb-0">{% block page_title %}{{ title or 'Mini CRM' }}{% endblock %}</h1>
+            {% block page_subtitle %}{% endblock %}
+          </div>
+        </div>
+
+        <div class="topbar-actions d-none d-md-flex">
           {% block topbar_actions %}{% endblock %}
+        </div>
+
+        <div class="navbar-tools">
+          <button class="btn btn-light border icon-btn" type="button" title="Notifications">
+            <i class="bi bi-bell"></i>
+            <span class="notif-dot"></span>
+          </button>
+
+          <!-- Profile dropdown -->
+          <div class="dropdown">
+            <button class="btn profile-toggle dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar-circle">{{ current_user.full_name[:1]|upper }}</span>
+              <span class="profile-meta d-none d-sm-flex">
+                <strong>{{ current_user.full_name }}</strong>
+                <small>{{ current_user.role_label }}</small>
+              </span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end profile-menu shadow">
+              <li class="px-3 py-2 border-bottom">
+                <div class="fw-semibold">{{ current_user.full_name }}</div>
+                <div class="small text-muted">{{ current_user.email }}</div>
+              </li>
+              <li>
+                <a class="dropdown-item" href="{{ url_for('dashboard.index') }}">
+                  <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="{{ url_for('contacts.index') }}">
+                  <i class="bi bi-people me-2"></i> My Contacts
+                </a>
+              </li>
+              <li>
+                <a class="dropdown-item" href="{{ url_for('deals.index') }}">
+                  <i class="bi bi-graph-up-arrow me-2"></i> My Deals
+                </a>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+                  <i class="bi bi-box-arrow-right me-2"></i> Sign Out
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
       </header>
 
