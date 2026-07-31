@@ -55,6 +55,10 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
   - Per-user permissions with role defaults
   - Reset password
   - Login history (success / failed attempts)
+- **Activity Log**
+  - Tracks Login, Logout, Lead Created/Updated/Deleted, Customer Created, Task Created/Completed
+  - Stores Date, Time, IP Address, and User
+  - Bootstrap table with search, filters, and pagination (`/activities`)
 - Full CRUD for **Contacts**, **Companies**, and **Deals**
 - Search and filter on list views
 - Ownership-scoped data (users only see their own records)
@@ -99,6 +103,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   ├── reports.py     # Reports + CSV export
     │   ├── settings.py    # Settings module
     │   ├── admin.py       # Admin Panel
+    │   ├── activities.py  # Activity Log
     │   ├── companies.py
     │   ├── contacts.py
     │   └── deals.py
@@ -109,6 +114,7 @@ Manage contacts, companies, and deals with a clean MVC architecture and Flask Bl
     │   └── settings_service.py
     ├── templates/         # Views (MVC)
     │   ├── admin/         # Admin dashboard, users, roles, history
+    │   ├── activities/    # Activity Log table
     │   └── auth/
     │       ├── login.html
     │       └── register.html

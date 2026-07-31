@@ -9,6 +9,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from app.extensions import db
 from app.forms import LoginForm, RegisterForm
 from app.models import ROLE_EMPLOYEE, User
+from app.services.activity import log_activity
 from app.services.admin_service import record_login_attempt
 
 auth_bp = Blueprint("auth", __name__)
@@ -63,6 +64,14 @@ def login():
                 request=request,
                 user=user,
             )
+            log_activity(
+                "login",
+                f"{user.full_name} signed in",
+                entity_type="auth",
+                entity_id=user.id,
+                user_id=user.id,
+                request=request,
+            )
             db.session.commit()
             flash(f"Welcome back, {user.full_name}! ({user.role_label})", "success")
             next_page = _safe_next_url(request.args.get("next"))
@@ -99,6 +108,16 @@ def register():
 @login_required
 def logout():
     """End the current session and return to the login page."""
+    user = current_user._get_current_object()
+    log_activity(
+        "logout",
+        f"{user.full_name} signed out",
+        entity_type="auth",
+        entity_id=user.id,
+        user_id=user.id,
+        request=request,
+    )
+    db.session.commit()
     logout_user()
     flash("You have been signed out.", "info")
     return redirect(url_for("auth.login"))

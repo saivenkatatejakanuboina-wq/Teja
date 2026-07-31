@@ -595,17 +595,53 @@ class Task(db.Model):
         return f"<Task {self.title}>"
 
 
+ACTIVITY_LABELS = {
+    ("login", "auth"): "Login",
+    ("logout", "auth"): "Logout",
+    ("created", "lead"): "Lead Created",
+    ("updated", "lead"): "Lead Updated",
+    ("deleted", "lead"): "Lead Deleted",
+    ("created", "customer"): "Customer Created",
+    ("updated", "customer"): "Customer Updated",
+    ("deleted", "customer"): "Customer Deleted",
+    ("converted", "customer"): "Lead Converted",
+    ("created", "task"): "Task Created",
+    ("updated", "task"): "Task Updated",
+    ("completed", "task"): "Task Completed",
+    ("deleted", "task"): "Task Deleted",
+    ("user_created", "user"): "User Created",
+    ("user_updated", "user"): "User Updated",
+    ("user_deleted", "user"): "User Deleted",
+    ("user_activated", "user"): "User Activated",
+    ("user_deactivated", "user"): "User Deactivated",
+    ("user_password_reset", "user"): "Password Reset",
+}
+
+# Canonical tracked events for filters / documentation
+TRACKED_ACTIVITY_FILTERS = (
+    ("login", "Login"),
+    ("logout", "Logout"),
+    ("lead_created", "Lead Created"),
+    ("lead_updated", "Lead Updated"),
+    ("lead_deleted", "Lead Deleted"),
+    ("customer_created", "Customer Created"),
+    ("task_created", "Task Created"),
+    ("task_completed", "Task Completed"),
+)
+
+
 class ActivityLog(db.Model):
-    """Audit trail for lead/customer (and related) actions."""
+    """Audit trail for auth and CRM actions."""
 
     __tablename__ = "activity_logs"
 
     id = db.Column(db.Integer, primary_key=True)
     action = db.Column(db.String(40), nullable=False, index=True)
-    entity_type = db.Column(db.String(40), default="lead", nullable=False)
+    entity_type = db.Column(db.String(40), default="lead", nullable=False, index=True)
     entity_id = db.Column(db.Integer)
     message = db.Column(db.String(500), nullable=False)
     details = db.Column(db.Text)
+    ip_address = db.Column(db.String(64), index=True)
     lead_id = db.Column(db.Integer, db.ForeignKey("leads.id", ondelete="CASCADE"))
     customer_id = db.Column(db.Integer, db.ForeignKey("customers.id", ondelete="CASCADE"))
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
@@ -616,6 +652,21 @@ class ActivityLog(db.Model):
     lead = db.relationship("Lead", back_populates="activities")
     customer = db.relationship("Customer", backref=db.backref("activities", lazy="dynamic"))
     user = db.relationship("User", back_populates="activities")
+
+    @property
+    def action_label(self) -> str:
+        return ACTIVITY_LABELS.get(
+            (self.action, self.entity_type),
+            self.action.replace("_", " ").title(),
+        )
+
+    @property
+    def activity_date(self) -> str:
+        return self.created_at.strftime("%Y-%m-%d") if self.created_at else "—"
+
+    @property
+    def activity_time(self) -> str:
+        return self.created_at.strftime("%H:%M:%S") if self.created_at else "—"
 
     def __repr__(self) -> str:
         return f"<ActivityLog {self.action} #{self.id}>"

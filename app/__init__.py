@@ -47,6 +47,7 @@ def _register_extensions(app: Flask) -> None:
 
 
 def _register_blueprints(app: Flask) -> None:
+    from app.blueprints.activities import activities_bp
     from app.blueprints.admin import admin_bp
     from app.blueprints.auth import auth_bp
     from app.blueprints.companies import companies_bp
@@ -62,6 +63,7 @@ def _register_blueprints(app: Flask) -> None:
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
+    app.register_blueprint(activities_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(leads_bp, url_prefix="/leads")
     app.register_blueprint(customers_bp, url_prefix="/customers")
@@ -112,6 +114,20 @@ def _create_database(app: Flask) -> None:
         import app.models  # noqa: F401
 
         db.create_all()
+        _ensure_sqlite_columns()
+
+
+def _ensure_sqlite_columns() -> None:
+    """Add newly introduced columns on existing SQLite databases."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    if "activity_logs" not in inspector.get_table_names():
+        return
+    columns = {col["name"] for col in inspector.get_columns("activity_logs")}
+    if "ip_address" not in columns:
+        db.session.execute(text("ALTER TABLE activity_logs ADD COLUMN ip_address VARCHAR(64)"))
+        db.session.commit()
 
 
 def _seed_default_admin(app: Flask) -> None:
